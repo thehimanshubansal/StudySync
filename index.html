@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudySync | Master Your Learning</title>
+    <link rel="icon" type="image/png" href="Image_Folder\Logo.png">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="js/api.js"></script>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <script>
+        // Tailwind Configuration for Dark Mode
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        study: '#2F2E80',
+                        sync: '#00B4BE',
+                    }
+                }
+            }
+        }
+
+        // Dark Mode Logic
+        function toggleDarkMode() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        // Apply theme on load
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        #_toasts { z-index: 9999 !important; }
+
+        /* Reference Image Styling */
+        .nav-pill {
+            background: rgb(255, 255, 255);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        .dark .nav-pill {
+            background: rgba(15, 23, 42, 0.9);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .hero-bg {
+            background: radial-gradient(circle at top right, rgba(0, 180, 190, 0.1), transparent),
+                        radial-gradient(circle at bottom left, rgba(47, 46, 128, 0.1), transparent);
+        }
+        .dark .hero-bg {
+            background: radial-gradient(circle at top right, rgba(0, 180, 190, 0.15), transparent),
+                        radial-gradient(circle at bottom left, rgba(47, 46, 128, 0.15), transparent),
+                        #020617;
+        }
+
+        .btn-gradient {
+            background: linear-gradient(135deg, #2F2E80, #00B4BE);
+            transition: all 0.3s ease;
+        }
+        .btn-gradient:hover {
+            filter: brightness(1.1);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 transition-colors duration-300">
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-[100] nav-pill">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            
+            <!-- Left: Logo & Pill Info -->
+            <div class="flex items-center gap-4">
+                <a href="index.html" class="flex items-center gap-2">
+                    <img src="Image_Folder\Logo.png" alt="Logo" class="h-8 w-auto">
+                    <div class="text-xl font-black tracking-tighter">
+                        <span class="text-study dark:text-indigo-400">Study</span><span class="text-sync">Sync</span>
+                    </div>
+                </a>
+                <div class="hidden sm:flex bg-slate-900/5 dark:bg-white/10 px-3 py-1 rounded-full border border-black/5 dark:border-white/10">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Smart Study Planner</span>
+                </div>
+            </div>
+            
+            <!-- Center: Links -->
+            <div class="hidden md:flex items-center gap-8 text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                <a href="#features" class="hover:text-sync transition">Features</a>
+                <a href="#about" class="hover:text-sync transition">About Us</a>
+                <a href="#" class="hover:text-sync transition">Contact</a>
+            </div>
+
+            <!-- Right: Actions -->
+            <div class="flex items-center gap-3">
+                <button onclick="toggleDarkMode()" class="p-2 text-slate-500 hover:text-sync transition">
+                    <i class="fas fa-moon dark:hidden"></i>
+                    <i class="fas fa-sun hidden dark:block"></i>
+                </button>
+                <button onclick="toggleModal('loginModal')" class="px-4 py-2 text-xs font-bold uppercase tracking-widest hover:text-sync transition">Login</button>
+                <button onclick="toggleModal('signupModal')" class="btn-gradient text-white px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-widest shadow-lg shadow-sync/20">Sign Up</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative min-h-screen flex items-center justify-center text-center px-6 hero-bg overflow-hidden">
+        <!-- Floating Particles Effect -->
+        <div class="absolute inset-0 pointer-events-none opacity-50">
+            <div class="absolute top-1/4 left-1/4 w-1 h-1 bg-sync rounded-full animate-ping"></div>
+            <div class="absolute bottom-1/3 right-1/4 w-1 h-1 bg-study rounded-full animate-pulse"></div>
+        </div>
+
+        <div class="max-w-4xl relative z-10">
+            <h1 class="text-5xl md:text-8xl font-black text-slate-900 dark:text-white mb-8 leading-tight tracking-tighter">
+                Discover Your Perfect <span class="text-transparent bg-clip-text bg-gradient-to-r from-study to-sync">Flow</span>
+            </h1>
+            <p class="text-lg md:text-xl text-slate-500 dark:text-slate-400 mb-12 max-w-2xl mx-auto font-medium">
+                Make smart decisions with our revolutionary AI enabled study guidance tools and expert learning counsellors.
+            </p>
+            <button onclick="toggleModal('signupModal')" class="btn-gradient text-white px-10 py-4 rounded-xl font-black text-lg shadow-2xl shadow-sync/30 transition-all">
+                Get Started Today
+            </button>
+        </div>
+    </section>
+
+    <!-- Features Placeholder -->
+    <section id="features" class="py-24 bg-white dark:bg-slate-900">
+        <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-3 gap-12 text-center">
+            <div class="p-8 rounded-3xl border border-slate-200 dark:border-slate-800 hover:shadow-xl transition-all">
+                <i class="fas fa-bolt text-3xl text-sync mb-6"></i>
+                <h3 class="text-xl font-bold mb-4">AI Scheduling</h3>
+                <p class="text-slate-500 text-sm">Automatically organize your tasks based on difficulty and deadlines.</p>
+            </div>
+            <div class="p-8 rounded-3xl border border-slate-200 dark:border-slate-800 hover:shadow-xl transition-all">
+                <i class="fas fa-brain text-3xl text-sync mb-6"></i>
+                <h3 class="text-xl font-bold mb-4">Focus Modes</h3>
+                <p class="text-slate-500 text-sm">Minimize distractions with integrated Pomodoro and focus tools.</p>
+            </div>
+            <div class="p-8 rounded-3xl border border-slate-200 dark:border-slate-800 hover:shadow-xl transition-all">
+                <i class="fas fa-chart-pie text-3xl text-sync mb-6"></i>
+                <h3 class="text-xl font-bold mb-4">Smart Stats</h3>
+                <p class="text-slate-500 text-sm">Visualize your learning progress with deep-dive analytics.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal fixed inset-0 z-[200] flex items-center justify-center hidden">
+        <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onclick="toggleModal('loginModal')"></div>
+        <div class="relative bg-white dark:bg-slate-900 p-10 rounded-3xl shadow-2xl w-full max-w-md mx-4">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-black text-slate-900 dark:text-white">Welcome Back</h2>
+                <p class="text-slate-500 text-sm mt-2">Log in to your study dashboard</p>
+            </div>
+            <form class="space-y-4">
+                <input id="loginEmail" type="email" placeholder="Email Address" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-sync outline-none transition">
+                <input id="loginPassword" type="password" placeholder="Password" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-sync outline-none transition">
+                <button onclick="loginUser()" type="button" class="w-full btn-gradient text-white py-4 rounded-xl font-black shadow-xl">Log In</button>
+            </form>
+            <p class="text-center mt-6 text-sm text-slate-500">
+                Don't have an account? <button onclick="toggleModal('loginModal'); toggleModal('signupModal')" class="text-sync font-bold hover:underline">Sign up for free</button>
+            </p>
+        </div>
+    </div>
+
+    <!-- Signup Modal -->
+    <div id="signupModal" class="modal fixed inset-0 z-[200] flex items-center justify-center hidden">
+        <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onclick="toggleModal('signupModal')"></div>
+        <div class="relative bg-white dark:bg-slate-900 p-10 rounded-3xl shadow-2xl w-full max-w-md mx-4">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-black text-slate-900 dark:text-white">Create Account</h2>
+                <p class="text-slate-500 text-sm mt-2">Start your success journey today</p>
+            </div>
+            <form class="space-y-4">
+                <input id="signupName" type="text" placeholder="Full Name" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-sync outline-none transition">
+                <input id="signupEmail" type="email" placeholder="Email Address" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-sync outline-none transition">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Date of Birth</label>
+                    <input id="signupDOB" type="date" class="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-sync">
+                </div>
+                <input id="signupPassword" type="password" placeholder="Password (Min. 8 chars)" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-sync outline-none transition">
+                <button onclick="signupUser()" type="button" class="w-full btn-gradient text-white py-4 rounded-xl font-black shadow-xl">Sign Up</button>
+            </form>
+            <p class="text-center mt-6 text-sm text-slate-500">
+                Already registered? <button onclick="toggleModal('signupModal'); toggleModal('loginModal')" class="text-sync font-bold hover:underline">Login</button>
+            </p>
+        </div>
+    </div>
+
+    <!-- About Us Section -->
+    <section id="about" class="py-24 bg-slate-50 dark:bg-slate-950">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-black mb-4">Our Team</h2>
+                <p class="text-slate-500 dark:text-slate-400 font-medium">Students of GB Pant DSEU Okhla Campus 1</p>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                <!-- Amar -->
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 text-center hover:scale-105 transition">
+                    <div class="w-20 h-20 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">A</div>
+                    <h3 class="font-bold text-lg">Amar</h3>
+                    <p class="text-sync text-sm font-bold">UI / Frontend Dev</p>
+                </div>
+                <!-- Geetika -->
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 text-center hover:scale-105 transition">
+                    <div class="w-20 h-20 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">G</div>
+                    <h3 class="font-bold text-lg">Geetika</h3>
+                    <p class="text-sync text-sm font-bold">JS & Validation Dev</p>
+                </div>
+                <!-- Himanshu -->
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 text-center hover:scale-105 transition">
+                    <div class="w-20 h-20 bg-amber-100 dark:bg-amber-900/30 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">H</div>
+                    <h3 class="font-bold text-lg">Himanshu</h3>
+                    <p class="text-sync text-sm font-bold">Backend (PHP) + DB</p>
+                </div>
+                <!-- Daksh -->
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 text-center hover:scale-105 transition">
+                    <div class="w-20 h-20 bg-rose-100 dark:bg-rose-900/30 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">D</div>
+                    <h3 class="font-bold text-lg">Daksh</h3>
+                    <p class="text-sync text-sm font-bold">Frontend Dev 2</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+
+    function toggleModal(modalId) {
+        const modal = document.getElementById(modalId);
+        modal.classList.toggle('hidden');
+    }
+
+    async function loginUser() {
+        const email = document.getElementById("loginEmail").value.trim();
+        const password = document.getElementById("loginPassword").value.trim();
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            showToast("Invalid email format", "error");
+            return;
+        }
+        const passRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+        if (!passRegex.test(password)) {
+            showToast("Password: Min 8 chars, 1 letter, 1 number", "error");
+            return;
+        }
+        const res = await API.login({ email, password });
+        if (res.success) { window.location.href = "dashboard.html"; } 
+        else { showToast(res.message || "Login failed", "error"); }
+    }
+    
+    async function signupUser() {
+        const name = document.getElementById("signupName").value.trim();
+        const email = document.getElementById("signupEmail").value.trim();
+        const dob = document.getElementById("signupDOB").value;
+        const password = document.getElementById("signupPassword").value;
+
+        // 1. Name Validation
+        if (name.length < 2) {
+            showToast("Enter a valid full name", "error");
+            return;
+        }
+
+        // 2. Email Validation (Regex)
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            showToast("Invalid email format", "error");
+            return;
+        }
+
+        // 3. DOB Validation (Must be at least 10 years old)
+        if (!dob) {
+            showToast("Please select your date of birth", "error");
+            return;
+        }
+        const birthYear = new Date(dob).getFullYear();
+        const currentYear = new Date().getFullYear();
+        if (currentYear - birthYear < 10) {
+            showToast("You must be at least 10 years old", "error");
+            return;
+        }
+
+        // 4. Password Validation (Min 8 chars, 1 letter, 1 number)
+        const passRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+        if (!passRegex.test(password)) {
+            showToast("Password: Min 8 chars, 1 letter, 1 number", "error");
+            return;
+        }
+
+        const res = await API.signup({ 
+            full_name: name, 
+            email: email, 
+            password: password,
+            dob: dob 
+        });
+
+        if (res.success) {
+            showToast("Account created successfully!");
+            window.location.href = "dashboard.html";
+        } else {
+            showToast(res.message, "error");
+        }
+    }
+    </script>
+</body>
+</html>

@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudySync | Dashboard</title>
+    <link rel="icon" type="image/png" href="Image_Folder/Logo.png">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="js/api.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: { colors: { study: '#2F2E80', sync: '#00B4BE' } }
+            }
+        }
+
+        // IMPROVED DARK MODE LOGIC
+        function applyTheme() {
+            if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+        applyTheme();
+
+        (async () => {
+            const user = await requireLogin();
+            
+            if (user) {
+                // Function to start the dashboard
+                const startApp = () => {
+                    initDashboard(user);
+                };
+
+                // If DOM is already loaded, run immediately. Otherwise, wait for it.
+                if (document.readyState === "loading") {
+                    window.addEventListener('DOMContentLoaded', startApp);
+                } else {
+                    startApp();
+                }
+            } else {
+                console.error("Auth failed or no user found.");
+            }
+        })();
+    </script>
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .main-scrollbar::-webkit-scrollbar { width: 4px; }
+        .main-scrollbar::-webkit-scrollbar-thumb { background: #00B4BE; border-radius: 10px; }
+        #sidebar { transition: width 0.3s ease; }
+        
+        /* Glassmorphism for stats */
+        .stats-gist { transition: transform 0.2s ease; }
+        .stats-gist:hover { transform: translateY(-3px); }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-[#020617] text-slate-800 dark:text-slate-200 overflow-hidden transition-colors duration-300">
+
+    <!-- TOP NAVBAR -->
+    <header class="h-16 w-full bg-white dark:bg-[#0b1120] border-b border-slate-200 dark:border-white/5 flex items-center justify-between px-6 fixed top-0 z-[60]">
+        <div class="flex items-center gap-4">
+            <button onclick="toggleSidebar()" class="p-2 rounded-lg text-slate-500 hover:text-sync transition">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="flex items-center gap-2">
+                <img src="Image_Folder/Logo.png" class="h-8 w-auto">
+                <span class="font-black text-xl tracking-tighter">
+                    <span class="text-[#2F2E80] dark:text-indigo-400">Study</span><span class="text-[#00B4BE]">Sync</span>
+                </span>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <button onclick="toggleDarkMode()" class="p-2 w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 transition flex items-center justify-center">
+                <i class="fas fa-moon dark:hidden"></i>
+                <i class="fas fa-sun hidden dark:block text-amber-400"></i>
+            </button>
+            <a href="profile.html" class="flex items-center gap-3 border-l pl-4 dark:border-white/10">
+                <div class="text-right hidden sm:block">
+                    <p class="sidebar-username text-xs font-bold leading-none">User</p>
+                    <p class="text-[9px] text-sync font-bold uppercase mt-1">View Profile</p>
+                </div>
+                <div class="sidebar-avatar w-10 h-10 rounded-xl bg-sync text-white flex items-center justify-center font-black shadow-lg">U</div>
+            </a>
+        </div>
+    </header>
+
+    <div class="flex pt-16 h-screen">
+        <!-- SIDEBAR -->
+        <aside id="sidebar" class="w-64 bg-white dark:bg-[#0b1120] border-r border-slate-200 dark:border-white/5 flex flex-col shrink-0">
+            <nav class="flex-1 px-4 overflow-y-auto main-scrollbar py-6 space-y-1">
+                <p class="px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Workspace</p>
+                
+                <button onclick="window.location.href='dashboard.html'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold bg-sync/10 text-sync">
+                    <i class="fas fa-home"></i> <span>Home</span>
+                </button>
+
+                <p class="px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 pt-4">Schedule View</p>
+                <!-- TOGGLE VIEW LIST -->
+                <div class="p-1 bg-slate-100 dark:bg-white/5 rounded-2xl flex flex-col gap-1">
+                    <button id="btnDayView" onclick="switchView('day')" 
+                        class="flex items-center gap-3 px-4 py-2 rounded-xl text-xs font-bold transition-all bg-white dark:bg-[#0b1120] text-sync shadow-sm">
+                        <i class="fas fa-list"></i> Day Timeline
+                    </button>                    
+                    <button id="btnWeekView" onclick="switchView('week')" 
+                        class="flex items-center gap-3 px-4 py-2 rounded-xl text-xs font-bold transition-all text-slate-500 hover:text-sync">
+                        <i class="fas fa-calendar-week"></i> Week View
+                    </button>
+                    <button id="btnMonthView" onclick="switchView('month')" 
+                        class="flex items-center gap-3 px-4 py-2 rounded-xl text-xs font-bold transition-all text-slate-500 hover:text-sync">
+                        <i class="fas fa-th-large"></i> Month Grid
+                    </button>
+                </div>
+
+                <p class="px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 pt-4">Actions</p>
+                <button onclick="toggleModal('taskModal')" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-500 hover:text-sync hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
+                    <i class="fas fa-plus-circle"></i> <span>Add New Task</span>
+                </button>
+                <button onclick="window.location.href='taskscheduler.html'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-500 hover:text-sync hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
+                    <i class="fas fa-tasks"></i> <span>Task Scheduler</span>
+                </button>
+
+                <p class="px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 pt-4">Insights</p>
+                <button onclick="window.location.href='progress.html'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-500 hover:text-sync hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
+                    <i class="fas fa-chart-pie"></i> <span>Progress Report</span>
+                </button>
+                <button onclick="window.location.href='notes.html'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-500 hover:text-sync hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
+                    <i class="fas fa-sticky-note"></i> <span>My Notes</span>
+                </button>
+
+                <div class="pt-6">
+                    <button onclick="handleLogout()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-rose-500 hover:bg-rose-500/10 transition-all">
+                        <i class="fas fa-power-off"></i> <span>Sign Out</span>
+                    </button>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="flex-1 overflow-y-auto main-scrollbar p-6 lg:p-8">
+            <div class="max-w-5xl mx-auto space-y-6">
+                
+                <!-- PROGRESS GIST (Clickable) -->
+                <div onclick="window.location.href='progress.html'" class="grid grid-cols-2 md:grid-cols-4 gap-4 cursor-pointer">
+                    <div class="stats-gist p-4 bg-white dark:bg-[#0b1120] rounded-3xl border border-slate-200 dark:border-white/5 shadow-sm">
+                        <p class="text-[10px] font-black text-slate-400 uppercase">Total</p>
+                        <p id="gist-total" class="text-xl font-black">0</p>
+                    </div>
+                    <div class="stats-gist p-4 bg-white dark:bg-[#0b1120] rounded-3xl border border-slate-200 dark:border-white/5 shadow-sm">
+                        <p class="text-[10px] font-black text-amber-500 uppercase">Pending</p>
+                        <p id="gist-pending" class="text-xl font-black">0</p>
+                    </div>
+                    <div class="stats-gist p-4 bg-white dark:bg-[#0b1120] rounded-3xl border border-slate-200 dark:border-white/5 shadow-sm">
+                        <p class="text-[10px] font-black text-emerald-500 uppercase">Completed</p>
+                        <p id="gist-completed" class="text-xl font-black">0</p>
+                    </div>
+                    <div class="stats-gist p-4 bg-white dark:bg-[#0b1120] rounded-3xl border border-slate-200 dark:border-white/5 shadow-sm">
+                        <p class="text-[10px] font-black text-rose-500 uppercase">Streak</p>
+                        <p id="gist-streak" class="text-xl font-black">🔥 0</p>
+                    </div>
+                </div>
+
+                <!-- SMART SUGGESTIONS SECTION -->
+                <div id="smartSection" class="max-w-5xl mx-auto mb-8 hidden">
+                    <div class="flex items-center gap-2 mb-4">
+                        <i class="fas fa-brain text-sync"></i>
+                        <h3 class="text-sm font-bold uppercase tracking-widest text-slate-400">Recommended Focus Order</h3>
+                    </div>
+                    <div id="smartFocusList" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Smartly sorted tasks will appear here -->
+                    </div>
+                </div>
+
+                <!-- VIEW CONTAINERS -->
+                </div>
+
+                <h2 id="viewTitle" class="text-xl font-black px-2 pt-4">Daily Timeline</h2>
+
+                <!-- DAY VIEW -->
+                <div id="dayContent" class="hidden bg-white dark:bg-[#0b1120] rounded-[2rem] border border-slate-200 dark:border-white/5 divide-y dark:divide-white/5 overflow-hidden shadow-sm"></div>
+
+                <!-- WEEK VIEW (New) -->
+                <div id="weekContent" class="hidden bg-white dark:bg-[#0b1120] rounded-[2rem] border border-slate-200 dark:border-white/5 overflow-hidden grid grid-cols-7 shadow-sm divide-x dark:divide-white/5"></div>
+
+                <!-- MONTH VIEW -->
+                <div id="monthContent" class="hidden bg-white dark:bg-[#0b1120] rounded-[2rem] border border-slate-200 dark:border-white/5 overflow-hidden grid grid-cols-7 shadow-sm">
+                    <div class="flex justify-center gap-4 mt-6">
+                        <button onclick="changeMonth(-1)" class="p-3 rounded-xl bg-white dark:bg-[#0b1120] border border-slate-200 dark:border-white/5 hover:text-sync"><i class="fas fa-chevron-left"></i></button>
+                        <span id="monthName" class="p-3 font-black uppercase text-xs tracking-widest">Month Year</span>
+                        <button onclick="changeMonth(1)" class="p-3 rounded-xl bg-white dark:bg-[#0b1120] border border-slate-200 dark:border-white/5 hover:text-sync"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="taskModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div class="bg-white dark:bg-[#0b1120] p-8 rounded-[2rem] w-full max-w-lg shadow-2xl relative">
+            <button onclick="toggleModal('taskModal')" class="absolute top-6 right-6 text-slate-400"><i class="fas fa-times"></i></button>
+            <h3 class="text-2xl font-black mb-6">Sync New Task</h3>
+            
+            <form id="taskForm" class="p-8 space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-400">Subject</label>
+                        <input id="taskSubject" type="text" placeholder="e.g., DBMS" class="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl outline-none border border-slate-200 dark:border-slate-700">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-400">Task Name</label>
+                        <input id="taskTitle" type="text" placeholder="e.g., SQL Practice" required class="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl outline-none border border-slate-200 dark:border-slate-700">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black uppercase text-slate-400">Task Theme Color</label>
+                    <div class="flex items-center gap-3 mt-2">
+                        <input id="taskColor" type="color" value="#00B4BE" class="w-12 h-12 rounded-lg border-0 cursor-pointer bg-transparent">
+                        <span class="text-[10px] text-slate-400 font-bold">Pick a custom color</span>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black uppercase text-slate-400">Description / Category</label>
+                    <textarea id="taskDesc" placeholder="Brief details about the task..." class="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl outline-none border border-slate-200 dark:border-slate-700 resize-none" rows="2"></textarea>
+                </div>
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-400">Priority</label>
+                        <select id="taskPriority" class="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl outline-none border border-slate-200 dark:border-slate-700">
+                            <option value="High">High</option>
+                            <option value="Medium" selected>Medium</option>
+                            <option value="Low">Low</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-400">Est. Mins</label>
+                        <input id="taskEstTime" type="number" value="60" class="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl outline-none border border-slate-200 dark:border-slate-700">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-400">Deadline</label>
+                        <input id="taskDate" type="date" required class="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl outline-none border border-slate-200 dark:border-slate-700">
+                    </div>
+                </div>
+
+                <!-- Row 4: Clock Time (Added) & Checkboxes -->
+                <div class="flex items-center justify-between gap-4">
+                    <div class="flex-1">
+                        <label class="block text-[10px] font-black uppercase text-slate-400">Start Time</label>
+                        <input id="taskClockTime" type="time" class="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl outline-none border border-slate-200 dark:border-slate-700">
+                    </div>
+                    <div class="flex items-center gap-4 pt-4">
+                        <label class="flex items-center gap-1 text-[10px] font-bold"><input type="checkbox" id="taskUrgent"> URGENT</label>
+                        <label class="flex items-center gap-1 text-[10px] font-bold"><input type="checkbox" id="taskImportant"> IMPORTANT</label>
+                        <label class="flex items-center gap-1 text-[10px] font-bold"><input type="checkbox" id="taskReminder"> REMINDER</label>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full py-4 bg-sync text-white rounded-2xl font-black shadow-lg shadow-sync/20 transition hover:scale-[1.02]">CREATE TASK</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- AI ASSISTANT FLOATING BUTTON -->
+    <button onclick="toggleAI()" class="fixed bottom-6 right-6 w-14 h-14 bg-study text-white rounded-full shadow-2xl flex items-center justify-center z-[100] hover:scale-110 transition-transform group">
+        <i class="fas fa-robot text-xl"></i>
+        <span class="absolute right-16 bg-white dark:bg-[#0b1120] text-study dark:text-sync px-3 py-1 rounded-lg text-xs font-bold shadow-sm opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-sync/20">Ask AI Assistant</span>
+    </button>
+
+    <!-- AI SIDE PANEL -->
+    <aside id="aiPanel" class="fixed top-0 right-0 h-full w-full max-w-md bg-white dark:bg-[#0b1120] shadow-[-10px_0_30px_rgba(0,0,0,0.1)] z-[110] transform translate-x-full transition-transform duration-300 flex flex-col border-l dark:border-white/5">
+        <!-- Header -->
+        <div class="p-6 border-b dark:border-white/5 flex items-center justify-between bg-slate-50/50 dark:bg-white/5">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-sync/10 text-sync flex items-center justify-center">
+                    <i class="fas fa-brain text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="font-black text-sm uppercase tracking-widest">StudySync AI</h3>
+                    <p class="text-[10px] text-emerald-500 font-bold uppercase tracking-tighter flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span> Personal Assistant
+                    </p>
+                </div>
+            </div>
+            <button onclick="toggleAI()" class="p-2 text-slate-400 hover:text-rose-500 transition"><i class="fas fa-times text-xl"></i></button>
+        </div>
+
+        <!-- Chat Content -->
+        <div id="aiChatBody" class="flex-1 overflow-y-auto p-6 space-y-4 main-scrollbar">
+            <div class="bg-slate-50 dark:bg-white/5 p-4 rounded-2xl text-sm leading-relaxed border border-slate-100 dark:border-white/5">
+                👋 Hello! I've analyzed your schedule. How can I help you excel today?
+            </div>
+        </div>
+
+        <!-- Loading Indicator (Hidden by default) -->
+        <div id="aiLoading" class="hidden px-6 py-2">
+            <div class="flex items-center gap-2 text-sync text-xs font-bold italic animate-pulse">
+                <i class="fas fa-cog fa-spin"></i> Claude is analyzing your tasks...
+            </div>
+        </div>
+
+        <!-- Footer / Input -->
+        <div class="p-6 border-t dark:border-white/5 space-y-4">
+            <!-- Quick Actions -->
+            <div class="flex flex-wrap gap-2">
+                <button onclick="askStudyAI('Prioritize my tasks for today')" class="text-[10px] font-bold px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-white/5 hover:bg-sync hover:text-white transition-all">🚀 Prioritize</button>
+                <button onclick="askStudyAI('Give me a study plan for today')" class="text-[10px] font-bold px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-white/5 hover:bg-sync hover:text-white transition-all">📅 Today's Plan</button>
+                <button onclick="askStudyAI('I am feeling distracted, help me focus')" class="text-[10px] font-bold px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-white/5 hover:bg-sync hover:text-white transition-all">🧠 Focus Tips</button>
+            </div>
+            
+            <div class="relative">
+                <input id="aiInput" type="text" placeholder="Type a prompt..." class="w-full p-4 pr-12 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-sync text-sm">
+                <button onclick="handleAISubmit()" class="absolute right-3 top-3 w-8 h-8 bg-sync text-white rounded-xl flex items-center justify-center hover:scale-110 transition-transform">
+                    <i class="fas fa-paper-plane text-xs"></i>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MODALS & JS (Same as before with updated dark mode toggle) -->
+    <script>
+        let currentMonth = new Date();
+
+        function toggleSidebar() {
+            const sb = document.getElementById('sidebar');
+            sb.classList.toggle('hidden');
+        }
+
+        function toggleDarkMode() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        async function initDashboard(user) {
+            populateSidebar(user);
+            
+            // Always fetch and render all data on initialization
+            await updateGist();
+            await renderDayTimeline();
+            await renderWeekView();
+            await renderMonthView();
+            await calculateSmartSchedule(); 
+
+            // SESSION STORAGE: Restore the last view the user was using
+            const savedView = sessionStorage.getItem('currentView') || 'day';
+            switchView(savedView);
+        }
+
+        async function updateGist() {
+            const res = await API.getStats();
+            if(res.success) {
+                document.getElementById('gist-total').innerText = res.data.total;
+                document.getElementById('gist-pending').innerText = res.data.pending;
+                document.getElementById('gist-completed').innerText = res.data.completed;
+                document.getElementById('gist-streak').innerText = `🔥 ${res.data.streak}`;
+            }
+        }
+
+        function toggleModal(id) {
+            const modal = document.getElementById(id);
+            if (modal) modal.classList.toggle('hidden');
+        }
+
+        async function toggleTask(id) {
+            const res = await API.toggleTask(id);
+            if(res.success) {
+                showToast("Task updated!");
+                // Refresh all components to reflect completion
+                updateGist();
+                renderDayTimeline();
+                renderWeekView();
+                renderMonthView();
+                calculateSmartSchedule(); 
+            } else {
+                showToast("Error updating task", "error");
+            }
+        }
+
+        function switchView(view) {
+            const dv = document.getElementById('dayContent');
+            const wv = document.getElementById('weekContent');
+            const mv = document.getElementById('monthContent');
+            const title = document.getElementById('viewTitle');
+
+            // 1. Hide all content containers
+            dv.classList.add('hidden'); 
+            wv.classList.add('hidden'); 
+            mv.classList.add('hidden');
+            
+            // 2. Show the selected container
+            if(view === 'day') { dv.classList.remove('hidden'); title.innerText = "Daily Timeline"; }
+            if(view === 'week') { wv.classList.remove('hidden'); title.innerText = "Weekly Schedule"; }
+            if(view === 'month') { mv.classList.remove('hidden'); title.innerText = "Monthly Overview"; }
+
+            // 3. Reset and Apply Button Styles
+            const btnIds = ['btnDayView', 'btnWeekView', 'btnMonthView'];
+            
+            // Define exact class clusters
+            const activeClasses = ["bg-white", "dark:bg-[#0b1120]", "text-sync", "shadow-sm"];
+            const inactiveClasses = ["text-slate-500", "hover:text-sync"];
+
+            btnIds.forEach(id => {
+                const btn = document.getElementById(id);
+                if (!btn) return;
+
+                // Determine if this button is the active one
+                const isActive = id.toLowerCase().includes(view);
+
+                // Remove ALL possible state classes first
+                btn.classList.remove(...activeClasses, ...inactiveClasses);
+
+                // Add the correct set
+                if (isActive) {
+                    btn.classList.add(...activeClasses);
+                } else {
+                    btn.classList.add(...inactiveClasses);
+                }
+            });
+
+            // 4. Persistence
+            sessionStorage.setItem('currentView', view);
+        }
+
+
+        document.getElementById('taskForm').onsubmit = async (e) => {
+            e.preventDefault();
+
+            const data = {
+                title: document.getElementById('taskTitle').value,
+                subject: document.getElementById('taskSubject').value || 'General',
+                description: document.getElementById('taskDesc').value || '',
+                category: document.getElementById('taskSubject').value || 'General', // Using Subject as Category for color mapping
+                priority: document.getElementById('taskPriority').value,
+                task_date: document.getElementById('taskDate').value,
+                task_time: document.getElementById('taskClockTime').value || '00:00:00',
+                estimated_time: parseInt(document.getElementById('taskEstTime').value) || 60,
+                is_urgent: document.getElementById('taskUrgent').checked ? 1 : 0,
+                is_important: document.getElementById('taskImportant').checked ? 1 : 0,
+                reminder: document.getElementById('taskReminder').checked ? 1 : 0,
+                color: document.getElementById('taskColor').value
+            };
+
+            const res = await API.createTask(data);
+            if(res.success) {
+                showToast("Task Created!");
+                toggleModal('taskModal');
+                // REFRESH EVERYTHING
+                renderDayTimeline();
+                renderMonthView();
+                updateGist();
+                calculateSmartSchedule();
+                e.target.reset();
+            } else {
+                showToast(res.message, "error");
+            }
+        };
+
+        async function renderDayTimeline() {
+            const container = document.getElementById('dayContent');
+            const today = new Date().toISOString().split('T')[0];
+            const res = await API.getTasks({ date: today });
+            const tasks = res.success ? res.data : [];
+
+            let html = '';
+            for (let i = 0; i < 24; i++) {
+                const hour = i === 0 ? 12 : (i > 12 ? i - 12 : i);
+                const ampm = i < 12 ? 'AM' : 'PM';
+                // Inside renderDayTimeline loop
+                const hourTasks = tasks.filter(t => {
+                    if (!t.task_time) return false;
+                    // Extract hour from "HH:MM:SS"
+                    const h = parseInt(t.task_time.split(':')[0]);
+                    return h === i;
+                });
+
+                html += `
+                <div class="flex min-h-[80px]">
+                    <div class="w-20 p-6 text-right text-[10px] font-black text-slate-400 border-r dark:border-white/5">${hour} ${ampm}</div>
+                    <div class="flex-1 p-2 flex flex-wrap gap-2 items-center">
+                        ${hourTasks.map(t => `
+                            <div onclick="toggleTask(${t.id})" 
+                                class="task-card px-4 py-2 rounded-xl text-xs font-bold cursor-pointer ${t.status === 'completed' ? 'opacity-40 line-through bg-slate-200 text-slate-600' : 'text-white shadow-lg'}"
+                                style="background: ${t.status === 'completed' ? '' : t.color};">
+                                ${t.status === 'completed' ? '✓ ' : ''}${t.title}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>`;
+            }
+            container.innerHTML = html;
+        }
+
+        async function renderWeekView() {
+            const container = document.getElementById('weekContent');
+            container.innerHTML = '';
+            const curr = new Date();
+            const res = await API.getTasks(); // Fetch all
+            const tasks = res.success ? res.data : [];
+
+            for (let i = 0; i < 7; i++) {
+                let day = new Date(curr.setDate(curr.getDate() - curr.getDay() + i));
+                let dateStr = day.toISOString().split('T')[0];
+                let dayTasks = tasks.filter(t => t.task_date === dateStr);
+
+                container.innerHTML += `
+                    <div class="min-h-[400px] flex flex-col">
+                        <div class="p-4 border-b dark:border-white/5 bg-slate-50/50 dark:bg-white/5 text-center">
+                            <p class="text-[10px] font-black text-slate-400 uppercase">${day.toLocaleDateString('en-US', { weekday: 'short' })}</p>
+                            <p class="text-sm font-black">${day.getDate()}</p>
+                        </div>
+                        <div class="flex-1 p-2 space-y-2">
+                            ${dayTasks.map(t => `
+                                <div onclick="toggleTask(${t.id})" class="p-2 rounded-lg text-[9px] font-bold text-white cursor-pointer shadow-sm" style="background:${t.status === 'completed' ? '#cbd5e1' : t.color}">
+                                    ${t.title}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>`;
+            }
+        }
+
+        async function renderMonthView() {
+            const grid = document.getElementById('monthContent');
+            if(!grid) return;
+            grid.innerHTML = '';
+            const monthLabel = document.getElementById('monthName');
+            const year = currentMonth.getFullYear();
+            const month = currentMonth.getMonth();
+            if(monthLabel) monthLabel.innerText = currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+            ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(day => {
+                grid.innerHTML += `<div class="p-3 text-center text-[9px] font-black uppercase text-slate-400 border-b dark:border-white/5 bg-slate-50/50 dark:bg-white/5">${day}</div>`;
+            });
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            // Fetching tasks for the whole month
+            const monthStr = `${year}-${String(month + 1).padStart(2, '0')}`;
+            const res = await API.getTasks({ month: monthStr });
+            const tasks = res.success ? res.data : [];
+
+            for (let i = 0; i < firstDay; i++) grid.innerHTML += `<div class="p-6 border-b border-r dark:border-white/5 opacity-20"></div>`;
+            for (let d = 1; d <= daysInMonth; d++) {
+                const dateStr = `${year}-${String(month+1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const dayTasks = tasks.filter(t => t.task_date === dateStr);
+                grid.innerHTML += `
+                    <div class="p-6 border-b border-r dark:border-white/5 text-center relative hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer">
+                        <span class="text-xs font-bold">${d}</span>
+                        <div class="flex justify-center gap-0.5 mt-1">
+                            ${dayTasks.map(t => `<div class="w-1.5 h-1.5 rounded-full" style="background:${t.color}"></div>`).join('')}
+                        </div>
+                    </div>`;
+            }
+        }
+
+        function changeMonth(step) {
+            currentMonth.setMonth(currentMonth.getMonth() + step);
+            renderMonthView();
+        }
+
+        async function calculateSmartSchedule() {
+            const res = await API.getTasks(); 
+            if (!res.success) return;
+
+            const tasks = res.data.filter(t => t.status === 'pending'); 
+            const section = document.getElementById('smartSection');
+            const container = document.getElementById('smartFocusList');
+
+            if (tasks.length === 0) {
+                if(section) section.classList.add('hidden');
+                return;
+            }
+
+            // Scoring Logic
+            const sortedTasks = tasks.map(t => {
+                let score = 0;
+                if (t.priority === 'High') score += 50;
+                else if (t.priority === 'Medium') score += 25;
+                if (parseInt(t.is_urgent) === 1) score += 40;
+                if (parseInt(t.is_important) === 1) score += 30;
+                return { ...t, smartScore: score };
+            }).sort((a, b) => b.smartScore - a.smartScore);
+
+            if(section) section.classList.remove('hidden');
+            if(container) {
+                container.innerHTML = sortedTasks.slice(0, 3).map(t => `
+                    <div class="bg-white dark:bg-[#0b1120] p-4 rounded-2xl shadow-sm flex flex-col justify-between border-l-4" style="border-color: ${t.color}">
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="text-[9px] font-bold px-2 py-0.5 rounded uppercase" style="background:${t.color}20; color:${t.color}">${t.subject || 'General'}</span>
+                            </div>
+                            <h4 class="font-bold text-sm dark:text-white">${t.title}</h4>
+                        </div>
+                        <button onclick="toggleTask(${t.id})" class="mt-4 w-full py-2 bg-slate-50 dark:bg-white/5 hover:bg-sync hover:text-white transition-all rounded-xl text-[10px] font-bold">
+                            Mark Done
+                        </button>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // AI PANEL LOGIC
+        function toggleAI() {
+            const panel = document.getElementById('aiPanel');
+            panel.classList.toggle('translate-x-full');
+        }
+
+        async function askStudyAI(prompt) {
+            const chatBody = document.getElementById('aiChatBody');
+            const loader = document.getElementById('aiLoading');
+
+            // 1. Add User Message to UI
+            chatBody.innerHTML += `
+                <div class="flex justify-end">
+                    <div class="bg-sync text-white p-3 rounded-2xl rounded-tr-none text-sm max-w-[80%] shadow-lg">
+                        ${prompt}
+                    </div>
+                </div>`;
+            chatBody.scrollTop = chatBody.scrollHeight;
+
+            // 2. Show Loader
+            loader.classList.remove('hidden');
+
+            try {
+                // 3. Call Backend (ai.php via api.js)
+                const res = await API.askAI(prompt);
+                loader.classList.add('hidden');
+
+                if (res.success) {
+                    // 4. Add AI Response to UI
+                    // We use .replace(/\n/g, '<br>') to preserve line breaks from Claude
+                    const formattedReply = res.data.reply.replace(/\n/g, '<br>');
+                    
+                    chatBody.innerHTML += `
+                        <div class="flex justify-start">
+                            <div class="bg-slate-100 dark:bg-white/10 p-4 rounded-2xl rounded-tl-none text-sm max-w-[90%] leading-relaxed border border-slate-200 dark:border-white/5">
+                                <div class="font-black text-[10px] text-sync uppercase mb-2 tracking-widest">StudySync AI Advice</div>
+                                ${formattedReply}
+                            </div>
+                        </div>`;
+                } else {
+                    showToast("AI is resting. Try again later.", "error");
+                }
+            } catch (err) {
+                loader.classList.add('hidden');
+                showToast("Connection to AI failed", "error");
+            }
+            
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+
+        // Handle Manual Input
+        function handleAISubmit() {
+            const input = document.getElementById('aiInput');
+            if (!input.value.trim()) return;
+            askStudyAI(input.value);
+            input.value = '';
+        }
+
+        // Allow "Enter" key to submit
+        document.getElementById('aiInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleAISubmit();
+        });
+
+        async function handleLogout() {
+            await API.logout();
+            window.location.href = "index.html";
+        }
+    </script>
+</body>
+</html>

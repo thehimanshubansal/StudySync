@@ -1,1 +1,1 @@
-# StudySync
+StudySync - Smart Study Planner

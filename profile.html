@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudySync | Profile</title>
+    <link rel="icon" type="image/png" href="Image_Folder/Logo.png">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="js/api.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: { colors: { study: '#2F2E80', sync: '#00B4BE' } }
+            }
+        }
+
+        // Apply theme immediately to prevent flicker
+        function applyTheme() {
+            if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+        applyTheme();
+
+        (async () => {
+            const user = await requireLogin();
+            if(user){
+                window.addEventListener('DOMContentLoaded', () => initProfile(user));
+            }
+        })();
+    </script>
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .main-scrollbar::-webkit-scrollbar { width: 4px; }
+        .main-scrollbar::-webkit-scrollbar-thumb { background: #00B4BE; border-radius: 10px; }
+        #sidebar { transition: width 0.3s ease; }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-[#020617] text-slate-800 dark:text-slate-200 overflow-hidden transition-colors duration-300">
+
+    <!-- TOP NAVBAR -->
+    <header class="h-16 w-full bg-white dark:bg-[#0b1120] border-b border-slate-200 dark:border-white/5 flex items-center justify-between px-6 fixed top-0 z-[60]">
+        <div class="flex items-center gap-4">
+            <button onclick="toggleSidebar()" class="p-2 rounded-lg text-slate-500 hover:text-sync transition">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="flex items-center gap-2">
+                <img src="Image_Folder/Logo.png" class="h-8 w-auto">
+                <span class="font-black text-xl tracking-tighter">
+                    <span class="text-[#2F2E80] dark:text-indigo-400">Study</span><span class="text-[#00B4BE]">Sync</span>
+                </span>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <button onclick="toggleDarkMode()" class="p-2 w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 transition flex items-center justify-center">
+                <i class="fas fa-moon dark:hidden"></i>
+                <i class="fas fa-sun hidden dark:block text-amber-400"></i>
+            </button>
+            <div class="flex items-center gap-3 border-l pl-4 dark:border-white/10">
+                <div class="text-right hidden sm:block">
+                    <p class="sidebar-username text-xs font-bold leading-none">User</p>
+                    <p class="text-[9px] text-sync font-bold uppercase mt-1">Active Profile</p>
+                </div>
+                <div class="sidebar-avatar w-10 h-10 rounded-xl bg-sync text-white flex items-center justify-center font-black shadow-lg">U</div>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex pt-16 h-screen">
+        <!-- SIDEBAR -->
+        <aside id="sidebar" class="w-64 bg-white dark:bg-[#0b1120] border-r border-slate-200 dark:border-white/5 flex flex-col shrink-0">
+            <nav class="flex-1 px-4 overflow-y-auto main-scrollbar py-6 space-y-1">
+                <p class="px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Workspace</p>
+                
+                <button onclick="window.location.href='dashboard.html'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-500 hover:text-sync hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
+                    <i class="fas fa-home"></i> <span>Home</span>
+                </button>
+
+                <p class="px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 pt-4">Schedule View</p>
+                <div class="p-1 bg-slate-100 dark:bg-white/5 rounded-2xl flex flex-col gap-1">
+                    <button onclick="window.location.href='dashboard.html'" class="flex items-center gap-3 px-4 py-2 rounded-xl text-xs font-bold transition-all text-slate-500 hover:text-sync">
+                        <i class="fas fa-list"></i> Day Timeline
+                    </button>
+                    <button onclick="window.location.href='dashboard.html'" class="flex items-center gap-3 px-4 py-2 rounded-xl text-xs font-bold transition-all text-slate-500 hover:text-sync">
+                        <i class="fas fa-th-large"></i> Month Grid
+                    </button>
+                </div>
+
+                <p class="px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 pt-4">Actions</p>
+                <button onclick="window.location.href='dashboard.html'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-500 hover:text-sync hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
+                    <i class="fas fa-plus-circle"></i> <span>Add New Task</span>
+                </button>
+                <button onclick="window.location.href='taskscheduler.html'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-500 hover:text-sync hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
+                    <i class="fas fa-tasks"></i> <span>Task Scheduler</span>
+                </button>
+
+                <p class="px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 pt-4">Insights</p>
+                <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold bg-sync/10 text-sync">
+                    <i class="fas fa-chart-pie"></i> <span>Progress Report</span>
+                </button>
+                <button onclick="window.location.href='notes.html'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-500 hover:text-sync hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
+                    <i class="fas fa-sticky-note"></i> <span>My Notes</span>
+                </button>
+
+                <div class="pt-6">
+                    <button onclick="handleLogout()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-rose-500 hover:bg-rose-500/10 transition-all">
+                        <i class="fas fa-power-off"></i> <span>Sign Out</span>
+                    </button>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="flex-1 overflow-y-auto main-scrollbar p-6 lg:p-8">
+            <div class="max-w-5xl mx-auto space-y-8">
+                
+                <h2 class="text-2xl font-black px-2">User Profile</h2>
+
+                <!-- ACCOUNT DETAILS CARD -->
+                <div class="bg-white dark:bg-[#0b1120] rounded-[2rem] border border-slate-200 dark:border-white/5 shadow-sm overflow-hidden">
+                    <div class="p-6 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 flex items-center justify-between">
+                        <h3 class="font-bold text-sm uppercase tracking-widest text-slate-500">Account Details</h3>
+                        <button class="text-sync text-xs font-bold hover:underline">Edit Details</button>
+                    </div>
+                    <div class="p-8 flex flex-col lg:flex-row gap-10 items-center">
+                        <div class="w-32 h-32 rounded-[2rem] bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 text-4xl font-black border-4 border-white dark:border-slate-800 shadow-lg shrink-0">
+                            U
+                        </div>
+                        <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 w-full">
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Full Name</label>
+                                <div id="prof-name" class="text-slate-700 dark:text-slate-200 font-bold p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5 min-h-[56px] flex items-center"></div>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Email Address</label>
+                                <div id="prof-email" class="text-slate-700 dark:text-slate-200 font-bold p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5 min-h-[56px] flex items-center"></div>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Phone Number</label>
+                                <div id="prof-phone" class="text-slate-700 dark:text-slate-200 font-bold p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5 min-h-[56px] flex items-center"></div>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Date of Birth</label>
+                                <div id="prof-dob" class="text-slate-700 dark:text-slate-200 font-bold p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5 min-h-[56px] flex items-center"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PROGRESS STATS -->
+                <div class="space-y-4">
+                    <h3 class="font-bold text-sm uppercase tracking-widest text-slate-500 px-2">Study Progress</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="bg-white dark:bg-[#0b1120] p-6 rounded-3xl border border-slate-200 dark:border-white/5 shadow-sm">
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Tasks</p>
+                            <p id="stat-total" class="text-3xl font-black mt-2">0</p>
+                        </div>
+                        <div class="bg-white dark:bg-[#0b1120] p-6 rounded-3xl border border-slate-200 dark:border-white/5 shadow-sm">
+                            <p class="text-[10px] font-black text-amber-500 uppercase tracking-widest">Pending</p>
+                            <p id="stat-pending" class="text-3xl font-black mt-2">0</p>
+                        </div>
+                        <div class="bg-white dark:bg-[#0b1120] p-6 rounded-3xl border border-slate-200 dark:border-white/5 shadow-sm">
+                            <p class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Completed</p>
+                            <p id="stat-completed" class="text-3xl font-black mt-2">0</p>
+                        </div>
+                        <div class="bg-white dark:bg-[#0b1120] p-6 rounded-3xl border border-slate-200 dark:border-white/5 shadow-sm">
+                            <p class="text-[10px] font-black text-rose-500 uppercase tracking-widest">Streak</p>
+                            <p id="stat-streak" class="text-3xl font-black mt-2">🔥 0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DELETE SECTION -->
+                <div class="pt-6">
+                    <div class="rounded-[2rem] border border-rose-100 dark:border-rose-900/20 bg-rose-50/30 dark:bg-rose-900/5 p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+                        <div class="text-center md:text-left">
+                            <h4 class="text-rose-600 font-bold text-lg">Delete Account</h4>
+                            <p class="text-slate-500 dark:text-slate-400 text-sm mt-1 font-medium">Permanently remove your account and all study data. Irreversible.</p>
+                        </div>
+                        <button onclick="deleteAccount()" class="bg-rose-500 text-white px-10 py-4 rounded-2xl font-black hover:bg-rose-600 transition shadow-lg shadow-rose-200 whitespace-nowrap">
+                            Delete My Account
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            const sb = document.getElementById('sidebar');
+            sb.classList.toggle('hidden');
+        }
+
+        function toggleDarkMode() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        async function initProfile(user) {
+            populateSidebar(user);
+            
+            // Fill Account Details
+            document.getElementById('prof-name').innerText = user.full_name || 'Not set';
+            document.getElementById('prof-email').innerText = user.email;
+            document.getElementById('prof-phone').innerText = user.phone || 'None';
+            document.getElementById('prof-dob').innerText = user.dob || 'Not set';
+
+            // Fetch Stats
+            const statsRes = await API.getStats();
+            if (statsRes.success) {
+                const s = statsRes.data;
+                document.getElementById('stat-total').innerText = s.total;
+                document.getElementById('stat-pending').innerText = s.pending;
+                document.getElementById('stat-completed').innerText = s.completed;
+                document.getElementById('stat-streak').innerText = `🔥 ${s.streak}`;
+            }
+        }
+
+        async function deleteAccount() {
+            if (confirm("WARNING: Are you sure? This will delete all your study data forever.")) {
+                const res = await API.deleteAccount();
+                if (res.success) {
+                    alert("Account deleted.");
+                    window.location.href = "index.html";
+                } else {
+                    alert(res.message);
+                }
+            }
+        }
+
+        async function handleLogout() {
+            await API.logout();
+            window.location.href = "index.html";
+        }
+    </script>
+</body>
+</html>

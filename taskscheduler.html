@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudySync | Task Scheduler</title>
+    <link rel="icon" type="image/png" href="Image_Folder/Logo.png">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="js/api.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: { colors: { study: '#2F2E80', sync: '#00B4BE' } } }
+        }
+
+        function applyTheme() {
+            if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+        applyTheme();
+
+        (async () => {
+            const user = await requireLogin();
+            if(user) window.addEventListener('DOMContentLoaded', () => initScheduler(user));
+        })();
+    </script>
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .main-scrollbar::-webkit-scrollbar { width: 4px; }
+        .main-scrollbar::-webkit-scrollbar-thumb { background: #00B4BE; border-radius: 10px; }
+        #sidebar { transition: transform 0.3s ease; }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-[#020617] text-slate-800 dark:text-slate-200 overflow-hidden transition-colors duration-300">
+
+    <!-- TOP NAVBAR (Matching Dashboard) -->
+    <header class="h-16 w-full bg-white dark:bg-[#0b1120] border-b border-slate-200 dark:border-white/5 flex items-center justify-between px-6 fixed top-0 z-[60]">
+        <div class="flex items-center gap-4">
+            <button onclick="toggleSidebar()" class="p-2 rounded-lg text-slate-500 hover:text-sync transition">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="flex items-center gap-2">
+                <img src="Image_Folder/Logo.png" class="h-8 w-auto">
+                <span class="font-black text-xl tracking-tighter">
+                    <span class="text-[#2F2E80] dark:text-indigo-400">Study</span><span class="text-[#00B4BE]">Sync</span>
+                </span>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <button onclick="toggleDarkMode()" class="p-2 w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 transition flex items-center justify-center">
+                <i class="fas fa-moon dark:hidden"></i>
+                <i class="fas fa-sun hidden dark:block text-amber-400"></i>
+            </button>
+            <a href="profile.html" class="flex items-center gap-3 border-l pl-4 dark:border-white/10">
+                <div class="text-right hidden sm:block">
+                    <p class="sidebar-username text-xs font-bold leading-none">User</p>
+                    <p class="text-[9px] text-sync font-bold uppercase mt-1">View Profile</p>
+                </div>
+                <div class="sidebar-avatar w-10 h-10 rounded-xl bg-sync text-white flex items-center justify-center font-black shadow-lg">U</div>
+            </a>
+        </div>
+    </header>
+
+    <div class="flex pt-16 h-screen">
+        <!-- SIDEBAR (Matching Dashboard) -->
+        <aside id="sidebar" class="w-64 bg-white dark:bg-[#0b1120] border-r border-slate-200 dark:border-white/5 flex flex-col shrink-0">
+            <nav class="flex-1 px-4 overflow-y-auto main-scrollbar py-6 space-y-1">
+                <p class="px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Workspace</p>
+                <button onclick="window.location.href='dashboard.html'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-500 hover:text-sync hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
+                    <i class="fas fa-home"></i> <span>Home</span>
+                </button>
+
+                <p class="px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 pt-4">Actions</p>
+                <button onclick="toggleModal('taskModal')" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-500 hover:text-sync hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
+                    <i class="fas fa-plus-circle"></i> <span>Add New Task</span>
+                </button>
+                <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold bg-sync/10 text-sync">
+                    <i class="fas fa-tasks"></i> <span>Task Scheduler</span>
+                </button>
+
+                <p class="px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 pt-4">Insights</p>
+                <button onclick="window.location.href='progress.html'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-500 hover:text-sync transition-all">
+                    <i class="fas fa-chart-pie"></i> <span>Progress</span>
+                </button>
+                <button onclick="window.location.href='notes.html'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-500 hover:text-sync transition-all">
+                    <i class="fas fa-sticky-note"></i> <span>My Notes</span>
+                </button>
+
+                <div class="pt-6">
+                    <button onclick="handleLogout()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-rose-500 hover:bg-rose-500/10 transition-all">
+                        <i class="fas fa-power-off"></i> <span>Sign Out</span>
+                    </button>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="flex-1 overflow-y-auto main-scrollbar p-6 lg:p-10">
+            <div class="max-w-5xl mx-auto space-y-8">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-3xl font-black tracking-tight">Task Manager</h2>
+                        <p class="text-slate-500 text-sm mt-1">View and manage all your synced study goals.</p>
+                    </div>
+                    <button onclick="toggleModal('taskModal')" class="px-6 py-3 bg-sync text-white rounded-2xl font-black shadow-lg shadow-sync/20 hover:scale-105 transition">
+                        + ADD TASK
+                    </button>
+                </div>
+
+                <!-- TASK LIST CONTAINER -->
+                <div id="taskList" class="grid grid-cols-1 gap-4">
+                    <!-- Tasks injected via AJAX -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- EDIT TASK MODAL -->
+    <div id="editModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div class="bg-white dark:bg-[#0b1120] p-8 rounded-[2rem] w-full max-w-lg shadow-2xl relative">
+            <button onclick="toggleModal('editModal')" class="absolute top-6 right-6 text-slate-400"><i class="fas fa-times"></i></button>
+            <h3 class="text-2xl font-black mb-6">Edit Task</h3>
+            <form id="editForm" class="space-y-4">
+                <input type="hidden" id="editTaskId">
+                <div class="grid grid-cols-2 gap-4">
+                    <input id="editTaskSubject" type="text" placeholder="Subject" class="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-2xl outline-none">
+                    <input id="editTaskTitle" type="text" placeholder="Task Name" required class="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-2xl outline-none">
+                </div>
+                <textarea id="editTaskDesc" placeholder="Description" class="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-2xl outline-none" rows="2"></textarea>
+                <div class="grid grid-cols-3 gap-4">
+                    <select id="editTaskPriority" class="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-2xl outline-none">
+                        <option value="High">High</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+                    <input id="editTaskDate" type="date" class="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-2xl outline-none">
+                    <input id="editTaskTime" type="time" class="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-2xl outline-none">
+                </div>
+                <button type="submit" class="w-full py-4 bg-sync text-white rounded-2xl font-black shadow-lg">UPDATE TASK</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="taskModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div class="bg-white dark:bg-[#0b1120] p-8 rounded-[2rem] w-full max-w-lg shadow-2xl relative">
+            <button onclick="toggleModal('taskModal')" class="absolute top-6 right-6 text-slate-400"><i class="fas fa-times"></i></button>
+            <h3 class="text-2xl font-black mb-6">Sync New Task</h3>
+            
+            <form id="taskForm" class="p-8 space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-400">Subject</label>
+                        <input id="taskSubject" type="text" placeholder="e.g., DBMS" class="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl outline-none border border-slate-200 dark:border-slate-700">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-400">Task Name</label>
+                        <input id="taskTitle" type="text" placeholder="e.g., SQL Practice" required class="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl outline-none border border-slate-200 dark:border-slate-700">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black uppercase text-slate-400">Task Theme Color</label>
+                    <div class="flex items-center gap-3 mt-2">
+                        <input id="taskColor" type="color" value="#00B4BE" class="w-12 h-12 rounded-lg border-0 cursor-pointer bg-transparent">
+                        <span class="text-[10px] text-slate-400 font-bold">Pick a custom color</span>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black uppercase text-slate-400">Description / Category</label>
+                    <textarea id="taskDesc" placeholder="Brief details about the task..." class="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl outline-none border border-slate-200 dark:border-slate-700 resize-none" rows="2"></textarea>
+                </div>
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-400">Priority</label>
+                        <select id="taskPriority" class="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl outline-none border border-slate-200 dark:border-slate-700">
+                            <option value="High">High</option>
+                            <option value="Medium" selected>Medium</option>
+                            <option value="Low">Low</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-400">Est. Mins</label>
+                        <input id="taskEstTime" type="number" value="60" class="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl outline-none border border-slate-200 dark:border-slate-700">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-400">Deadline</label>
+                        <input id="taskDate" type="date" required class="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl outline-none border border-slate-200 dark:border-slate-700">
+                    </div>
+                </div>
+
+                <!-- Row 4: Clock Time (Added) & Checkboxes -->
+                <div class="flex items-center justify-between gap-4">
+                    <div class="flex-1">
+                        <label class="block text-[10px] font-black uppercase text-slate-400">Start Time</label>
+                        <input id="taskClockTime" type="time" class="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl outline-none border border-slate-200 dark:border-slate-700">
+                    </div>
+                    <div class="flex items-center gap-4 pt-4">
+                        <label class="flex items-center gap-1 text-[10px] font-bold"><input type="checkbox" id="taskUrgent"> URGENT</label>
+                        <label class="flex items-center gap-1 text-[10px] font-bold"><input type="checkbox" id="taskImportant"> IMPORTANT</label>
+                        <label class="flex items-center gap-1 text-[10px] font-bold"><input type="checkbox" id="taskReminder"> REMINDER</label>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full py-4 bg-sync text-white rounded-2xl font-black shadow-lg shadow-sync/20 transition hover:scale-[1.02]">CREATE TASK</button>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        async function initScheduler(user) {
+            populateSidebar(user);
+            await loadTasks();
+        }
+
+        async function loadTasks() {
+            const res = await API.getTasks();
+            const container = document.getElementById('taskList');
+            if (res.success) {
+                // Sort by ID descending (Creation order)
+                const tasks = res.data.sort((a, b) => b.id - a.id);
+                
+                if (tasks.length === 0) {
+                    container.innerHTML = `<div class="py-20 text-center text-slate-400 italic">No tasks found. Sync a goal to get started!</div>`;
+                    return;
+                }
+
+                container.innerHTML = tasks.map(t => `
+                    <div class="bg-white dark:bg-[#0b1120] p-6 rounded-[1.5rem] border border-slate-200 dark:border-white/5 shadow-sm flex items-center justify-between hover:shadow-md transition group">
+                        <div class="flex items-center gap-5">
+                            <div class="w-3 h-14 rounded-full" style="background: ${t.color}"></div>
+                            <div>
+                                <div class="flex items-center gap-3">
+                                    <h4 class="font-bold text-lg ${t.status === 'completed' ? 'line-through opacity-50' : ''}">${t.title}</h4>
+                                    <span class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest bg-slate-100 dark:bg-white/5">${t.priority}</span>
+                                </div>
+                                <p class="text-xs text-slate-500 mt-1">${t.subject} • Due: ${t.task_date} at ${t.task_time}</p>
+                                <p class="text-[10px] text-slate-400 italic mt-1">${t.description || 'No notes added'}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="toggleTaskStatus(${t.id})" class="p-3 rounded-xl bg-slate-50 dark:bg-white/5 hover:text-sync transition">
+                                <i class="fas ${t.status === 'completed' ? 'fa-check-circle text-sync' : 'fa-circle-notch'}"></i>
+                            </button>
+                            <button onclick="openEditModal(${JSON.stringify(t).replace(/"/g, '&quot;')})" class="p-3 rounded-xl bg-slate-50 dark:bg-white/5 hover:text-sync transition">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="handleDelete(${t.id})" class="p-3 rounded-xl bg-rose-50 dark:bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        async function toggleTaskStatus(id) {
+            const res = await API.toggleTask(id);
+            if(res.success) loadTasks();
+        }
+
+        async function handleDelete(id) {
+            if(confirm("Permanently delete this task?")) {
+                const res = await API.deleteTask(id);
+                if(res.success) {
+                    showToast("Task Deleted");
+                    loadTasks();
+                }
+            }
+        }
+
+        function openEditModal(task) {
+            document.getElementById('editTaskId').value = task.id;
+            document.getElementById('editTaskTitle').value = task.title;
+            document.getElementById('editTaskSubject').value = task.subject;
+            document.getElementById('editTaskDesc').value = task.description;
+            document.getElementById('editTaskPriority').value = task.priority;
+            document.getElementById('editTaskDate').value = task.task_date;
+            document.getElementById('editTaskTime').value = task.task_time;
+            toggleModal('editModal');
+        }
+
+        document.getElementById('editForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const data = {
+                id: document.getElementById('editTaskId').value,
+                title: document.getElementById('editTaskTitle').value,
+                subject: document.getElementById('editTaskSubject').value,
+                description: document.getElementById('editTaskDesc').value,
+                priority: document.getElementById('editTaskPriority').value,
+                task_date: document.getElementById('editTaskDate').value,
+                task_time: document.getElementById('editTaskTime').value
+            };
+            const res = await API.updateTask(data);
+            if(res.success) {
+                showToast("Task Updated!");
+                toggleModal('editModal');
+                loadTasks();
+            }
+        };
+
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('hidden'); }
+        function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); }
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        }
+        async function handleLogout() { await API.logout(); window.location.href = "index.html"; }
+    </script>
+</body>
+</html>
