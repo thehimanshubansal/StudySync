@@ -15,16 +15,17 @@ if ($method === 'GET' && $action === 'list') {
    $month = $_GET['month'] ?? null;
 
    if ($date) {
-       $stmt = $db->prepare('SELECT * FROM tasks WHERE user_id=? ORDER BY task_time ASC');
+       // FIXED: Added task_date filter to SQL and bind_param
+       $stmt = $db->prepare('SELECT * FROM tasks WHERE user_id=? AND task_date=? ORDER BY task_time ASC');
        $stmt->bind_param('is', $uid, $date);
    } elseif ($month) {
-       // Logic for Monthly Calendar dots
        $from = $month . '-01';
        $to   = date('Y-m-t', strtotime($from));
        $stmt = $db->prepare('SELECT * FROM tasks WHERE user_id=? AND task_date BETWEEN ? AND ? ORDER BY task_date, task_time');
        $stmt->bind_param('iss', $uid, $from, $to);
    } else {
-       $stmt = $db->prepare('SELECT * FROM tasks WHERE user_id=? ORDER BY task_date, task_time');
+       // This block is used by the Task Scheduler to see ALL tasks
+       $stmt = $db->prepare('SELECT * FROM tasks WHERE user_id=? ORDER BY task_date DESC, task_time ASC');
        $stmt->bind_param('i', $uid);
    }
    $stmt->execute();

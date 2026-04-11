@@ -9,9 +9,10 @@ define('DB_USER', 'root');
 define('DB_PASS', '');           
 define('DB_NAME', 'studysync');
 // default XAMPP password (blank)
-// ── Claude AI ─────────────────────────────────────────
-define('CLAUDE_API_KEY', 'YOUR_CLAUDE_API_KEY_HERE');
-define('CLAUDE_MODEL',   'claude-sonnet-4-20250514');
+// ── GEMINI AI ─────────────────────────────────────────
+$envKey = getenv('GEMINI_API_KEY');
+define('GEMINI_API_KEY', $envKey ?: 'YOUR_GEMINI_API_KEY_HERE');
+define('GEMINI_MODEL',   'gemini-3-flash-preview');
 // ── Session (must be FIRST before any output) ─────────
 if (session_status() === PHP_SESSION_NONE) {
     session_set_cookie_params([ 

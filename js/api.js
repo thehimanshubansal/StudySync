@@ -60,7 +60,7 @@ function showToast(msg, type = 'success') {
    if (!wrap) {
        wrap = document.createElement('div');
        wrap.id = '_toasts';
-       wrap.style.cssText = 'position:fixed;top:20px;right:20px;zindex:99999;display:flex;flex-direction:column;gap:8px;pointer-events:none';
+       wrap.style.cssText = 'position:fixed;top:80px;right:20px;zindex:999999;display:flex;flex-direction:column;gap:8px;pointer-events:none';
        document.body.appendChild(wrap);
    }
    const bg = { success:'#10b981', error:'#ef4444', info:'#6366f1' }[type] || '#6366f1';
