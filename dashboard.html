@@ -214,7 +214,7 @@
                         <input id="taskSubject" type="text" placeholder="e.g., DBMS" class="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl outline-none border border-slate-200 dark:border-slate-700">
                     </div>
                     <div>
-                        <label class="block text-[10px] font-black uppercase text-slate-400">Task Name</label>
+                        <label class="block text-[10px] font-black uppercase text-slate-400">Task Name / Category</label>
                         <input id="taskTitle" type="text" placeholder="e.g., SQL Practice" required class="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl outline-none border border-slate-200 dark:border-slate-700">
                     </div>
                 </div>
@@ -226,7 +226,7 @@
                     </div>
                 </div>
                 <div>
-                    <label class="block text-[10px] font-black uppercase text-slate-400">Description / Category</label>
+                    <label class="block text-[10px] font-black uppercase text-slate-400">Description</label>
                     <textarea id="taskDesc" placeholder="Brief details about the task..." class="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl outline-none border border-slate-200 dark:border-slate-700 resize-none" rows="2"></textarea>
                 </div>
                 <div class="grid grid-cols-3 gap-4">
@@ -300,7 +300,7 @@
         <!-- Loading Indicator (Hidden by default) -->
         <div id="aiLoading" class="hidden px-6 py-2">
             <div class="flex items-center gap-2 text-sync text-xs font-bold italic animate-pulse">
-                <i class="fas fa-cog fa-spin"></i> Claude is analyzing your tasks...
+                <i class="fas fa-cog fa-spin"></i> Gemini is analyzing your tasks...
             </div>
         </div>
 
@@ -439,7 +439,7 @@
                 title: document.getElementById('taskTitle').value,
                 subject: document.getElementById('taskSubject').value || 'General',
                 description: document.getElementById('taskDesc').value || '',
-                category: document.getElementById('taskSubject').value || 'General', // Using Subject as Category for color mapping
+                category: document.getElementById('taskTitle').value || 'General', // Using Subject as Category for color mapping
                 priority: document.getElementById('taskPriority').value,
                 task_date: document.getElementById('taskDate').value,
                 task_time: document.getElementById('taskClockTime').value || '00:00:00',
@@ -639,7 +639,7 @@
 
                 if (res.success) {
                     // 4. Add AI Response to UI
-                    // We use .replace(/\n/g, '<br>') to preserve line breaks from Claude
+                    // We use .replace(/\n/g, '<br>') to preserve line breaks from Gemini
                     const formattedReply = res.data.reply.replace(/\n/g, '<br>');
                     
                     chatBody.innerHTML += `

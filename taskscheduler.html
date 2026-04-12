@@ -26,7 +26,22 @@
 
         (async () => {
             const user = await requireLogin();
-            if(user) window.addEventListener('DOMContentLoaded', () => initScheduler(user));
+            
+            if (user) {
+                // Function to start the dashboard
+                const startApp = () => {
+                    initScheduler(user);
+                };
+
+                // If DOM is already loaded, run immediately. Otherwise, wait for it.
+                if (document.readyState === "loading") {
+                    window.addEventListener('DOMContentLoaded', startApp);
+                } else {
+                    startApp();
+                }
+            } else {
+                console.error("Auth failed or no user found.");
+            }
         })();
     </script>
     
@@ -104,26 +119,54 @@
             </nav>
         </aside>
 
+        
         <!-- MAIN CONTENT AREA -->
-        <main class="flex-1 overflow-y-auto main-scrollbar p-6 lg:p-10">
-            <div class="max-w-5xl mx-auto space-y-8">
-                <div class="flex items-center justify-between">
+        <main class="flex-1 overflow-y-auto main-scrollbar p-6 lg:p-10 bg-slate-50 dark:bg-[#020617]">
+            <div class="max-w-5xl mx-auto space-y-6">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                         <h2 class="text-3xl font-black tracking-tight">Task Manager</h2>
-                        <p class="text-slate-500 text-sm mt-1">View and manage all your synced study goals.</p>
+                        <p class="text-slate-500 text-sm">View and manage all your synced study goals.</p>
                     </div>
                     <button onclick="toggleModal('taskModal')" class="px-6 py-3 bg-sync text-white rounded-2xl font-black shadow-lg shadow-sync/20 hover:scale-105 transition">
                         + ADD TASK
                     </button>
                 </div>
 
+                <!-- CONTROL BAR (Sort & Group) -->
+                <div class="bg-white dark:bg-[#0b1120] p-4 rounded-2xl border border-slate-200 dark:border-white/5 flex flex-wrap items-center gap-4 shadow-sm">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-sort-amount-down text-slate-400 text-xs"></i>
+                        <select id="sortSelect" onchange="processAndRender()" class="bg-transparent text-xs font-bold outline-none cursor-pointer text-slate-600 dark:text-slate-300">
+                            <option value="newest">Newest Created</option>
+                            <option value="date">Deadline (Nearest)</option>
+                            <option value="priority">Priority (High-Low)</option>
+                            <option value="subject">Subject (A-Z)</option>
+                        </select>
+                    </div>
+                    <div class="h-4 w-[1px] bg-slate-200 dark:bg-white/10 hidden md:block"></div>
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-layer-group text-slate-400 text-xs"></i>
+                        <select id="groupSelect" onchange="processAndRender()" class="bg-transparent text-xs font-bold outline-none cursor-pointer text-slate-600 dark:text-slate-300">
+                            <option value="none">No Grouping</option>
+                            <option value="subject">Group by Subject</option>
+                            <option value="priority">Group by Priority</option>
+                            <option value="status">Group by Status</option>
+                        </select>
+                    </div>
+                    <div class="flex-1"></div>
+                    <div class="relative w-full md:w-48">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                        <input id="searchInput" oninput="processAndRender()" type="text" placeholder="Search tasks..." class="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-white/5 rounded-xl text-xs outline-none border border-transparent focus:border-sync transition">
+                    </div>
+                </div>
+
                 <!-- TASK LIST CONTAINER -->
-                <div id="taskList" class="grid grid-cols-1 gap-4">
-                    <!-- Tasks injected via AJAX -->
+                <div id="taskList" class="space-y-6">
+                    <!-- Grouped or Flat tasks will be injected here -->
                 </div>
             </div>
         </main>
-    </div>
 
     <!-- EDIT TASK MODAL -->
     <div id="editModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
@@ -217,55 +260,130 @@
 
 
     <script>
+        let allTasks = [];
+
         async function initScheduler(user) {
             populateSidebar(user);
-            await loadTasks();
+            await fetchTasks();
         }
 
-        async function loadTasks() {
+        async function fetchTasks() {
             const res = await API.getTasks();
-            const container = document.getElementById('taskList');
             if (res.success) {
-                // Sort by ID descending (Creation order)
-                const tasks = res.data.sort((a, b) => b.id - a.id);
-                
-                if (tasks.length === 0) {
-                    container.innerHTML = `<div class="py-20 text-center text-slate-400 italic">No tasks found. Sync a goal to get started!</div>`;
-                    return;
-                }
-
-                container.innerHTML = tasks.map(t => `
-                    <div class="bg-white dark:bg-[#0b1120] p-6 rounded-[1.5rem] border border-slate-200 dark:border-white/5 shadow-sm flex items-center justify-between hover:shadow-md transition group">
-                        <div class="flex items-center gap-5">
-                            <div class="w-3 h-14 rounded-full" style="background: ${t.color}"></div>
-                            <div>
-                                <div class="flex items-center gap-3">
-                                    <h4 class="font-bold text-lg ${t.status === 'completed' ? 'line-through opacity-50' : ''}">${t.title}</h4>
-                                    <span class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest bg-slate-100 dark:bg-white/5">${t.priority}</span>
-                                </div>
-                                <p class="text-xs text-slate-500 mt-1">${t.subject} • Due: ${t.task_date} at ${t.task_time}</p>
-                                <p class="text-[10px] text-slate-400 italic mt-1">${t.description || 'No notes added'}</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <button onclick="toggleTaskStatus(${t.id})" class="p-3 rounded-xl bg-slate-50 dark:bg-white/5 hover:text-sync transition">
-                                <i class="fas ${t.status === 'completed' ? 'fa-check-circle text-sync' : 'fa-circle-notch'}"></i>
-                            </button>
-                            <button onclick="openEditModal(${JSON.stringify(t).replace(/"/g, '&quot;')})" class="p-3 rounded-xl bg-slate-50 dark:bg-white/5 hover:text-sync transition">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button onclick="handleDelete(${t.id})" class="p-3 rounded-xl bg-rose-50 dark:bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
-                        </div>
-                    </div>
-                `).join('');
+                allTasks = res.data;
+                processAndRender();
             }
         }
 
+        function processAndRender() {
+            const sortBy = document.getElementById('sortSelect').value;
+            const groupBy = document.getElementById('groupSelect').value;
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+
+            // 1. Filter by Search
+            let filtered = allTasks.filter(t => 
+                t.title.toLowerCase().includes(searchTerm) || 
+                t.subject.toLowerCase().includes(searchTerm)
+            );
+
+            // 2. Sort
+            filtered.sort((a, b) => {
+                if (sortBy === 'newest') return b.id - a.id;
+                if (sortBy === 'date') return new Date(a.task_date) - new Date(b.task_date);
+                if (sortBy === 'priority') {
+                    const map = { 'High': 3, 'Medium': 2, 'Low': 1 };
+                    return map[b.priority] - map[a.priority];
+                }
+                if (sortBy === 'subject') return a.subject.localeCompare(b.subject);
+                return 0;
+            });
+
+            const container = document.getElementById('taskList');
+            container.innerHTML = '';
+
+            // 3. Group and Render
+            if (groupBy === 'none') {
+                renderFlatList(container, filtered);
+            } else {
+                const groups = filtered.reduce((acc, task) => {
+                    const key = task[groupBy] || 'Uncategorized';
+                    if (!acc[key]) acc[key] = [];
+                    acc[key].push(task);
+                    return acc;
+                }, {});
+
+                for (const groupName in groups) {
+                    const groupDiv = document.createElement('div');
+                    groupDiv.className = "space-y-3";
+                    groupDiv.innerHTML = `
+                        <div class="flex items-center gap-3 px-2">
+                            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">${groupName}</span>
+                            <div class="h-[1px] flex-1 bg-slate-200 dark:bg-white/5"></div>
+                            <span class="text-[10px] font-bold text-slate-400">${groups[groupName].length} Tasks</span>
+                        </div>
+                    `;
+                    const listDiv = document.createElement('div');
+                    listDiv.className = "space-y-3";
+                    renderFlatList(listDiv, groups[groupName]);
+                    groupDiv.appendChild(listDiv);
+                    container.appendChild(groupDiv);
+                }
+            }
+        }
+
+        function renderFlatList(target, tasks) {
+            if (tasks.length === 0) {
+                target.innerHTML += `<p class="text-center py-10 text-slate-400 text-xs italic">No matching tasks found.</p>`;
+                return;
+            }
+            target.innerHTML += tasks.map(t => generateTaskHTML(t)).join('');
+        }
+
+        function generateTaskHTML(t) {
+            const isDone = t.status === 'completed';
+            const pClass = getPriorityClass(t.priority);
+            return `
+                <div class="bg-white dark:bg-[#0b1120] p-5 rounded-[1.5rem] border border-slate-200 dark:border-white/5 shadow-sm flex items-center justify-between hover:shadow-md transition group">
+                    <div class="flex items-center gap-5">
+                        <div class="w-3 h-12 rounded-full" style="background: ${t.color}"></div>
+                        <div>
+                            <div class="flex items-center gap-3">
+                                <h4 class="font-bold text-base ${isDone ? 'line-through opacity-40' : ''}">${t.subject}</h4>
+                                <span class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest bg-slate-100 dark:bg-white/5 ${pClass}">${t.priority}</span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 mt-0.5 font-medium">
+                                <span class="text-sync font-bold">${t.title}</span> • 
+                                <i class="far fa-calendar-alt ml-1"></i> ${t.task_date} • 
+                                <i class="far fa-clock ml-1"></i> ${t.task_time}
+                            </p>
+                            ${t.description ? `<p class="text-[10px] text-slate-400 italic mt-1">${t.description}</p>` : ''}
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onclick="toggleTaskStatus(${t.id})" class="p-2.5 rounded-xl bg-slate-50 dark:bg-white/5 hover:text-sync transition">
+                            <i class="fas ${isDone ? 'fa-check-circle text-sync' : 'fa-circle-notch'}"></i>
+                        </button>
+                        <button onclick='openEditModal(${JSON.stringify(t).replace(/'/g, "&apos;")})' class="p-2.5 rounded-xl bg-slate-50 dark:bg-white/5 hover:text-sync transition">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="handleDelete(${t.id})" class="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+
+        // Add this helper to taskscheduler script to handle Priority Colors
+        function getPriorityClass(p) {
+            if (p === 'High') return 'text-orange-500';
+            if (p === 'Low') return 'text-slate-400';
+            return 'text-blue-500';
+        }
         async function toggleTaskStatus(id) {
             const res = await API.toggleTask(id);
-            if(res.success) loadTasks();
+            if(res.success) fetchTasks();
         }
 
         async function handleDelete(id) {
@@ -273,7 +391,7 @@
                 const res = await API.deleteTask(id);
                 if(res.success) {
                     showToast("Task Deleted");
-                    loadTasks();
+                    fetchTasks();
                 }
             }
         }
@@ -304,7 +422,7 @@
             if(res.success) {
                 showToast("Task Updated!");
                 toggleModal('editModal');
-                loadTasks();
+                fetchTasks();
             }
         };
 
