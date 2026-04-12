@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudySync | Workspace</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9fb; }
+        
+        /* THE EXACT LOGO COLORS */
+        .color-study { color: #262E89; }
+        .color-sync { color: #6DBEBF; }
+        
+        /* CUSTOM SCROLLBAR */
+        .main-scrollbar::-webkit-scrollbar { width: 4px; }
+        .main-scrollbar::-webkit-scrollbar-thumb { background: #6DBEBF; border-radius: 10px; }
+        
+        /* LAYOUT LOGIC: Sidebar stays under Nav */
+        #sidebar { 
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            width: 280px; 
+            white-space: nowrap;
+        }
+        .sidebar-collapsed { width: 88px !important; }
+        
+        /* SMOOTH FADE FOR TEXT */
+        .nav-text, .nav-header, .profile-details {
+            transition: opacity 0.2s ease;
+        }
+        .sidebar-collapsed .nav-text, 
+        .sidebar-collapsed .nav-header, 
+        .sidebar-collapsed .profile-details { 
+            opacity: 0; pointer-events: none; 
+        }
+
+        .btn-gradient {
+            background: linear-gradient(135deg, #262E89 0%, #6DBEBF 100%);
+        }
+
+        .logo-tag {
+            background-color: #f1f3f5;
+            color: #868e96;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 4px 12px;
+            border-radius: 999px;
+        }
+
+        #modalOverlay { 
+            background: rgba(15, 23, 42, 0.4); 
+            backdrop-filter: blur(8px); 
+            display: none; 
+        }
+    </style>
+</head>
+<body class="text-slate-800 h-screen flex flex-col overflow-hidden">
+
+    <header class="h-20 bg-white border-b border-slate-100 flex items-center justify-between px-10 shrink-0 z-50">
+        <div class="flex items-center gap-6">
+            <button onclick="toggleSidebar()" class="text-slate-400 hover:color-study transition-colors">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2">
+                    <div class="text-2xl color-study"><i class="fas fa-graduation-cap"></i></div>
+                    <h1 class="text-2xl font-extrabold tracking-tighter leading-none">
+                        <span class="color-study">Study</span><span class="color-sync">Sync</span>
+                    </h1>
+                </div>
+                <span class="logo-tag uppercase">Smart Study Planner</span>
+            </div>
+        </div>
+        
+        <nav class="hidden md:flex items-center gap-8 text-[11px] font-black text-slate-400 uppercase tracking-widest">
+            <a href="#" class="hover:color-sync transition">Features</a>
+            <a href="#" class="hover:color-sync transition">About Us</a>
+            <a href="#" class="hover:color-sync transition">Contact</a>
+        </nav>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+        
+        <aside id="sidebar" class="bg-white border-r border-slate-100 flex flex-col">
+            <nav class="flex-1 px-4 py-8 space-y-2">
+                <p class="px-4 text-[10px] font-extrabold text-slate-400 uppercase mb-2 nav-header tracking-widest">Menu</p>
+                <a href="#" class="flex items-center gap-4 p-3 text-slate-600 hover:bg-slate-50 rounded-xl transition">
+                    <i class="fas fa-th-large w-6 text-center text-lg"></i> 
+                    <span class="nav-text font-bold">Dashboard</span>
+                </a>
+                
+                <p class="px-4 text-[10px] font-extrabold text-slate-400 uppercase mt-8 mb-2 nav-header tracking-widest">Create</p>
+                <button onclick="openModal('note')" class="w-full flex items-center gap-4 p-3 text-slate-700 hover:bg-slate-50 rounded-xl transition group">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 group-hover:bg-emerald-600 group-hover:text-white">
+                        <i class="fas fa-plus"></i>
+                    </div>
+                    <span class="nav-text font-bold text-sm">Add Notes</span>
+                </button>
+                <button onclick="openModal('goal')" class="w-full flex items-center gap-4 p-3 text-slate-700 hover:bg-slate-50 rounded-xl transition group">
+                    <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 group-hover:bg-amber-600 group-hover:text-white">
+                        <i class="fas fa-bullseye"></i>
+                    </div>
+                    <span class="nav-text font-bold text-sm">Add Goals</span>
+                </button>
+                <button onclick="openModal('thought')" class="w-full flex items-center gap-4 p-3 text-slate-700 hover:bg-slate-50 rounded-xl transition group">
+                    <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 group-hover:bg-purple-600 group-hover:text-white">
+                        <i class="fas fa-lightbulb"></i>
+                    </div>
+                    <span class="nav-text font-bold text-sm">Add Thoughts</span>
+                </button>
+            </nav>
+
+            <div class="p-6 border-t border-slate-50">
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-[#262E89] to-[#6DBEBF] flex items-center justify-center text-white font-bold shadow-md shrink-0">U</div>
+                    <div class="profile-details">
+                        <p class="text-sm font-bold text-slate-700 leading-tight">User Account</p>
+                        <p class="text-[10px] font-extrabold color-sync uppercase tracking-wide cursor-pointer hover:underline">View Profile</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="flex-1 overflow-y-auto main-scrollbar p-10">
+            <div class="max-w-6xl mx-auto">
+                <div class="flex justify-between items-end mb-10">
+                    <div>
+                        <h2 class="text-4xl font-black text-slate-800 tracking-tight">Focus <span class="color-sync">Vault</span></h2>
+                        <p class="text-slate-400 mt-2 font-medium">Your captures, organized and secure.</p>
+                    </div>
+                    <button onclick="clearAll()" class="text-[10px] font-black text-rose-300 hover:text-rose-500 uppercase tracking-widest transition">Clear Vault</button>
+                </div>
+
+                <div id="vaultGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+
+                <div id="emptyState" class="mt-12 bg-white rounded-[2.5rem] border border-slate-100 p-24 text-center">
+                    <div class="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-6 text-slate-200">
+                        <i class="fas fa-feather-alt text-3xl"></i>
+                    </div>
+                    <p class="text-slate-300 font-bold italic text-xl">The vault is quiet. Start creating!</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="modalOverlay" class="fixed inset-0 z-[100] flex items-center justify-center p-6">
+        <div class="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h3 id="modalTitle" class="text-2xl font-black text-slate-800">New Entry</h3>
+                <button onclick="closeModal()" class="text-slate-300 hover:text-slate-500 transition"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <input type="hidden" id="entryType">
+            <div class="space-y-4">
+                <input type="text" id="entryTitle" placeholder="Give it a title..." class="w-full p-5 bg-slate-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-100 font-bold text-slate-700">
+                <textarea id="entryContent" rows="5" placeholder="Details go here..." class="w-full p-5 bg-slate-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-100 text-slate-600"></textarea>
+            </div>
+            <button onclick="saveEntry()" class="w-full mt-8 btn-gradient text-white py-5 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-blue-100">Save to Vault</button>
+        </div>
+    </div>
+
+    <script>
+        let entries = JSON.parse(localStorage.getItem('studySyncVault')) || [];
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('sidebar-collapsed');
+        }
+
+        function openModal(type) {
+            document.getElementById('entryType').value = type;
+            document.getElementById('modalTitle').innerText = `Add ${type.charAt(0).toUpperCase() + type.slice(1)}`;
+            document.getElementById('modalOverlay').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').style.display = 'none';
+            document.getElementById('entryTitle').value = '';
+            document.getElementById('entryContent').value = '';
+        }
+
+        function saveEntry() {
+            const title = document.getElementById('entryTitle').value;
+            const content = document.getElementById('entryContent').value;
+            const type = document.getElementById('entryType').value;
+
+            if(!title || !content) return;
+
+            const entry = { id: Date.now(), type, title, content, date: new Date().toLocaleDateString() };
+            entries.unshift(entry);
+            localStorage.setItem('studySyncVault', JSON.stringify(entries));
+            closeModal();
+            renderVault();
+        }
+
+        function renderVault() {
+            const grid = document.getElementById('vaultGrid');
+            const empty = document.getElementById('emptyState');
+            grid.innerHTML = '';
+
+            if(entries.length === 0) {
+                empty.style.display = 'block';
+                return;
+            }
+            empty.style.display = 'none';
+
+            entries.forEach(item => {
+                const colors = { 
+                    note: 'bg-emerald-50 text-emerald-500', 
+                    goal: 'bg-amber-50 text-amber-500', 
+                    thought: 'bg-purple-50 text-purple-500' 
+                };
+                
+                grid.innerHTML += `
+                    <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm relative group hover:shadow-xl transition-all duration-300">
+                        <div class="flex justify-between items-center mb-6">
+                            <span class="text-[10px] font-black px-3 py-1 rounded-full uppercase ${colors[item.type]}">${item.type}</span>
+                            <span class="text-[10px] font-bold text-slate-300">${item.date}</span>
+                        </div>
+                        <h4 class="text-xl font-bold text-slate-800 mb-3">${item.title}</h4>
+                        <p class="text-slate-500 text-sm leading-relaxed">${item.content}</p>
+                        <button onclick="deleteEntry(${item.id})" class="absolute top-6 right-6 opacity-0 group-hover:opacity-100 text-slate-200 hover:text-rose-500 transition-all">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>`;
+            });
+        }
+
+        function deleteEntry(id) {
+            entries = entries.filter(e => e.id !== id);
+            localStorage.setItem('studySyncVault', JSON.stringify(entries));
+            renderVault();
+        }
+
+        function clearAll() {
+            if(confirm("Wipe the entire vault?")) {
+                entries = [];
+                localStorage.removeItem('studySyncVault');
+                renderVault();
+            }
+        }
+
+        renderVault();
+    </script>
+</body>
+</html>
