@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudySync | User Profile</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9fb; }
+        .color-study { color: #262E89; } 
+        .color-sync { color: #6DBEBF; }  
+        
+        #sidebar { width: 280px; }
+        .nav-item { transition: all 0.2s ease; }
+        .nav-active { background-color: #eef2f5; color: #6DBEBF !important; }
+        
+        .profile-card { border-radius: 2.5rem; }
+        .input-box { 
+            background-color: #f8f9fb; 
+            border: 1px solid #edf2f7; 
+            border-radius: 1rem; 
+            height: 60px;
+            transition: all 0.2s;
+        }
+        .input-box:focus { border-color: #6DBEBF; outline: none; background: white; }
+        
+        .stat-card { 
+            background: white; 
+            border: 1px solid #edf2f7; 
+            border-radius: 1.5rem; 
+            min-height: 140px;
+        }
+
+        #modalOverlay { 
+            background: rgba(15, 23, 42, 0.4); 
+            backdrop-filter: blur(8px); 
+            display: none; 
+        }
+    </style>
+</head>
+<body class="text-slate-800 h-screen flex flex-col overflow-hidden">
+
+    <header class="h-20 bg-white border-b border-slate-100 flex items-center justify-between px-10 shrink-0 z-50">
+        <div class="flex items-center gap-6">
+            <button class="text-slate-400 hover:text-[#262E89] transition-colors"><i class="fas fa-bars text-xl"></i></button>
+            <div class="flex items-center gap-2">
+                <div class="text-2xl color-study"><i class="fas fa-graduation-cap"></i></div>
+                <h1 class="text-2xl font-extrabold tracking-tighter leading-none"><span class="color-study">Study</span><span class="color-sync">Sync</span></h1>
+            </div>
+        </div>
+        <div class="flex items-center gap-6">
+            <button class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-600"><i class="fas fa-moon"></i></button>
+            <div class="flex items-center gap-3">
+                <div class="text-right hidden md:block">
+                    <p class="text-xs font-bold text-slate-800" id="headerName">User</p>
+                    <p class="text-[10px] font-bold text-teal-400 uppercase">Active Profile</p>
+                </div>
+                <div id="headerAvatar" class="w-10 h-10 rounded-xl bg-[#6DBEBF] flex items-center justify-center text-white font-bold">U</div>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+        <aside id="sidebar" class="bg-white border-r border-slate-100 flex flex-col overflow-y-auto p-6 space-y-7">
+            <div>
+                <p class="px-4 text-[10px] font-extrabold text-slate-400 uppercase mb-3 tracking-widest">Workspace</p>
+                <a href="#" class="flex items-center gap-4 p-3 text-slate-600 hover:bg-slate-50 rounded-xl font-bold nav-item"><i class="fas fa-home w-6"></i> Home</a>
+            </div>
+
+            <div>
+                <p class="px-4 text-[10px] font-extrabold text-slate-400 uppercase mb-3 tracking-widest">Schedule View</p>
+                <a href="#" class="flex items-center gap-4 p-3 text-slate-600 hover:bg-slate-50 rounded-xl font-bold nav-item"><i class="fas fa-list w-6"></i> Day Timeline</a>
+                <a href="#" class="flex items-center gap-4 p-3 text-slate-600 hover:bg-slate-50 rounded-xl font-bold nav-item"><i class="fas fa-th w-6"></i> Month Grid</a>
+            </div>
+
+            <div>
+                <p class="px-4 text-[10px] font-extrabold text-slate-400 uppercase mb-3 tracking-widest">Actions</p>
+                <a href="#" class="flex items-center gap-4 p-3 text-slate-600 hover:bg-slate-50 rounded-xl font-bold nav-item"><i class="fas fa-plus-circle w-6"></i> Add New Task</a>
+                <a href="#" class="flex items-center gap-4 p-3 text-slate-600 hover:bg-slate-50 rounded-xl font-bold nav-item"><i class="fas fa-tasks w-6"></i> Task Scheduler</a>
+            </div>
+
+            <div>
+                <p class="px-4 text-[10px] font-extrabold text-slate-400 uppercase mb-3 tracking-widest">Insights</p>
+                <a href="#" class="flex items-center gap-4 p-3 nav-active rounded-xl font-bold nav-item"><i class="fas fa-chart-pie w-6"></i> Progress Report</a>
+                <a href="#" class="flex items-center gap-4 p-3 text-slate-600 hover:bg-slate-50 rounded-xl font-bold nav-item"><i class="fas fa-book w-6"></i> My Notes</a>
+            </div>
+
+            <div class="pt-6">
+                <a href="#" class="flex items-center gap-4 p-3 text-rose-500 hover:bg-rose-50 rounded-xl font-bold transition"><i class="fas fa-power-off w-6"></i> Sign Out</a>
+            </div>
+        </aside>
+
+        <main class="flex-1 overflow-y-auto p-12">
+            <div class="max-w-6xl mx-auto">
+                <h2 class="text-3xl font-black text-[#1e293b] mb-10">User Profile</h2>
+
+                <div class="bg-white border border-slate-100 profile-card p-10 shadow-sm mb-12">
+                    <div class="flex justify-between items-center mb-8">
+                        <h3 class="text-sm font-black text-slate-400 uppercase tracking-widest">Account Details</h3>
+                    </div>
+
+                    <div class="flex flex-col lg:flex-row gap-12 mb-10">
+                        <div id="profileAvatar" class="w-40 h-40 bg-[#eef2ff] rounded-[2rem] flex items-center justify-center text-5xl font-bold text-[#6366f1] shrink-0 border-4 border-white shadow-sm">U</div>
+                        
+                        <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
+                                <div id="displayName" class="input-box flex items-center px-6 font-bold text-slate-700">User</div>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
+                                <div id="displayEmail" class="input-box flex items-center px-6 font-bold text-slate-700">user@studysync.com</div>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Daily Study Hours</label>
+                                <div class="input-box flex items-center px-6 font-bold text-slate-700">4 Hours</div>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date of Birth</label>
+                                <div id="displayDob" class="input-box flex items-center px-6 font-bold text-slate-700">May 15, 1998</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-10 border-t border-slate-50 flex flex-wrap gap-4">
+                        <button onclick="openEditModal()" class="bg-[#6DBEBF] text-white px-8 py-4 rounded-2xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-teal-100 hover:scale-105 transition">Update Info</button>
+                        <button class="bg-[#262E89] text-white px-8 py-4 rounded-2xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-blue-100">Change Password</button>
+                        <button class="bg-slate-100 text-slate-600 px-8 py-4 rounded-2xl font-bold text-xs uppercase tracking-widest">Forgot Password</button>
+                        <button class="bg-rose-50 text-rose-500 px-8 py-4 rounded-2xl font-bold text-xs uppercase tracking-widest ml-auto">Delete Account</button>
+                    </div>
+                </div>
+
+                <h3 class="text-sm font-black text-slate-400 uppercase tracking-widest mb-6 ml-2">Study Progress</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="stat-card p-8 flex flex-col justify-end"><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Tasks</p><p class="text-4xl font-black text-slate-800">0</p></div>
+                    <div class="stat-card p-8 flex flex-col justify-end"><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Pending</p><p class="text-4xl font-black text-slate-800">0</p></div>
+                    <div class="stat-card p-8 flex flex-col justify-end"><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Completed</p><p class="text-4xl font-black text-slate-800">0</p></div>
+                    <div class="stat-card p-8 flex flex-col justify-end"><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Streak</p><div class="flex items-center gap-3"><span class="text-2xl">🔥</span><p class="text-4xl font-black text-slate-800">0</p></div></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="modalOverlay" class="fixed inset-0 z-[100] flex items-center justify-center p-6">
+        <div class="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl p-10">
+            <h3 class="text-xl font-black text-slate-800 mb-6">Update Details</h3>
+            <div class="space-y-6">
+                <div>
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Full Name</label>
+                    <input type="text" id="editName" class="w-full input-box px-6 mt-2" placeholder="Your Name">
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Email</label>
+                    <input type="email" id="editEmail" class="w-full input-box px-6 mt-2" placeholder="Email Address">
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Date of Birth</label>
+                    <input type="date" id="editDob" class="w-full input-box px-6 mt-2">
+                </div>
+            </div>
+            <div class="flex gap-4 mt-10">
+                <button onclick="closeEditModal()" class="flex-1 py-4 text-slate-400 font-bold uppercase tracking-widest text-[10px]">Cancel</button>
+                <button onclick="saveChanges()" class="flex-1 bg-gradient-to-br from-[#262E89] to-[#6DBEBF] text-white py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px]">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openEditModal() { document.getElementById('modalOverlay').style.display = 'flex'; }
+        function closeEditModal() { document.getElementById('modalOverlay').style.display = 'none'; }
+
+        function saveChanges() {
+            const name = document.getElementById('editName').value;
+            const email = document.getElementById('editEmail').value;
+            const dob = document.getElementById('editDob').value;
+
+            if(name) {
+                document.getElementById('displayName').innerText = name;
+                document.getElementById('headerName').innerText = name;
+                document.getElementById('headerAvatar').innerText = name.charAt(0).toUpperCase();
+                document.getElementById('profileAvatar').innerText = name.charAt(0).toUpperCase();
+            }
+            if(email) document.getElementById('displayEmail').innerText = email;
+            if(dob) document.getElementById('displayDob').innerText = dob;
+
+            closeEditModal();
+        }
+    </script>
+</body>
+</html>
