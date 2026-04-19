@@ -7,6 +7,14 @@ $body   = json_decode(file_get_contents('php://input'), true) ?? [];
 
 $db = getDB();
 
+// Helper function to calculate Smart Score server-side
+function calculateScore($prio, $urg, $imp) {
+    $score = ($prio === 'High') ? 50 : (($prio === 'Medium') ? 25 : 10);
+    if ($urg == 1) $score += 40;
+    if ($imp == 1) $score += 30;
+    return $score;
+}
+
 // ════════════════════════════════════════════════════════
 //  LIST TASKS
 // ════════════════════════════════════════════════════════
@@ -14,20 +22,32 @@ if ($method === 'GET' && $action === 'list') {
    $date  = $_GET['date']  ?? null;
    $month = $_GET['month'] ?? null;
 
+   // Base Query: Status 'pending' comes first, then ordered by User/AI hybrid logic
+   $sql = "SELECT * FROM tasks WHERE user_id = ?";
+   $params = [$uid];
+   $types = "i";
+
    if ($date) {
-       // FIXED: Added task_date filter to SQL and bind_param
-       $stmt = $db->prepare('SELECT * FROM tasks WHERE user_id=? AND task_date=? ORDER BY task_time ASC');
-       $stmt->bind_param('is', $uid, $date);
+       $sql .= " AND task_date = ?";
+       $params[] = $date;
+       $types .= "s";
    } elseif ($month) {
        $from = $month . '-01';
        $to   = date('Y-m-t', strtotime($from));
-       $stmt = $db->prepare('SELECT * FROM tasks WHERE user_id=? AND task_date BETWEEN ? AND ? ORDER BY task_date, task_time');
-       $stmt->bind_param('iss', $uid, $from, $to);
-   } else {
-       // This block is used by the Task Scheduler to see ALL tasks
-       $stmt = $db->prepare('SELECT * FROM tasks WHERE user_id=? ORDER BY task_date DESC, task_time ASC');
-       $stmt->bind_param('i', $uid);
+       $sql .= " AND task_date BETWEEN ? AND ?";
+       $params[] = $from;
+       $params[] = $to;
+       $types .= "ss";
    }
+
+   // HYBRID SORT: 
+   // 1. Manual order (order_number)
+   // 2. AI Score (smart_score)
+   // 3. Time
+   $sql .= " ORDER BY status ASC, order_number ASC, smart_score DESC, task_time ASC";
+   
+   $stmt = $db->prepare($sql);
+   $stmt->bind_param($types, ...$params);
    $stmt->execute();
    respond(true, '', $stmt->get_result()->fetch_all(MYSQLI_ASSOC));
 }
@@ -71,8 +91,8 @@ if ($method === 'POST' && $action === 'create') {
    $category  = trim($body['category'] ?? 'General');
    $subject   = trim($body['subject'] ?? 'General');
    $priority  = trim($body['priority'] ?? 'Medium');
-   $date      = trim($body['task_date'] ?? date('Y-m-d'));
-   $time      = trim($body['task_time'] ?? '00:00:00');
+   $date = !empty(trim($body['task_date'] ?? '')) ? trim($body['task_date']) : date('Y-m-d');
+   $time = !empty(trim($body['task_time'] ?? '')) ? trim($body['task_time']) : '00:00:00';
    $est_time  = (int)($body['estimated_time'] ?? 60);
    $urgent    = (int)($body['is_urgent'] ?? 0);
    $important = (int)($body['is_important'] ?? 0);
@@ -80,19 +100,23 @@ if ($method === 'POST' && $action === 'create') {
    $color     = trim($body['color'] ?? '#00B4BE');
 
    if (!$title) respond(false, 'Task title is required.');
-   if (!$date || $date == '0000-00-00') respond(false, 'Valid date is required.');
+   // Calculate AI score before saving
+   $smart_score = calculateScore($priority, $urgent, $important);
 
-   $timeVal = $time ?: '00:00:00';
+   $res = $db->query("SELECT MAX(order_number) as max_ord FROM tasks WHERE user_id = $uid");
+   $row = $res->fetch_assoc();
+   $nextOrder = ($row['max_ord'] ?? 0) + 1;
+
 
    // SQL Query including ALL columns from your screenshot
    $stmt = $db->prepare('INSERT INTO tasks 
-        (user_id, title, description, category, task_date, task_time, subject, priority, estimated_time, is_urgent, is_important, reminder, color) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        (user_id, title, description, category, task_date, task_time, subject, priority, estimated_time, is_urgent, is_important, reminder, color, smart_score, order_number) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
 
    // BINDING TYPES EXPLAINED:
    // i (user_id), s (title), s (desc), s (cat), s (date), s (time), s (subj), s (prio), i (est), i (urg), i (imp), i (rem)
-   $stmt->bind_param('isssssssiiiis', 
-        $uid, $title, $desc, $category, $date, $timeVal, $subject, $priority, $est_time, $urgent, $important, $reminder, $color
+   $stmt->bind_param('isssssssiiiisii', 
+        $uid, $title, $desc, $category, $date, $timeVal, $subject, $priority, $est_time, $urgent, $important, $reminder, $color, $smart_score, $nextOrder
    );
 
    if ($stmt->execute()) {
@@ -115,14 +139,43 @@ if ($method === 'POST' && $action === 'toggle') {
    $tid = (int)($body['id'] ?? 0);
    if (!$tid) respond(false, 'Task ID required.');
 
-   $stmt = $db->prepare('UPDATE tasks SET status=IF(status="pending","completed","pending") WHERE id=? AND user_id=?');
+   $stmt = $db->prepare("UPDATE tasks SET 
+        status = IF(status='pending','completed','pending'),
+        completed_at = IF(status='pending', CURRENT_TIMESTAMP, NULL) 
+        WHERE id=? AND user_id=?");
    $stmt->bind_param('ii', $tid, $uid);
+
    
    if ($stmt->execute()) {
        $task = $db->query("SELECT * FROM tasks WHERE id=$tid")->fetch_assoc();
        respond(true, 'Status Updated', $task);
    }
    respond(false, 'Toggle failed');
+}
+
+
+// ════════════════════════════════════════════════════════
+//  REORDER TASK
+// ════════════════════════════════════════════════════════
+if ($method === 'POST' && $action === 'reorder') {
+    $draggedId = (int)($body['draggedId'] ?? 0);
+    $targetId  = (int)($body['targetId'] ?? 0);
+
+    if (!$draggedId || !$targetId) respond(false, "Invalid IDs");
+
+    $res = $db->query("SELECT order_number FROM tasks WHERE id = $targetId");
+    $targetOrder = $res->fetch_assoc()['order_number'];
+
+    $newOrder = $targetOrder - 1; 
+    $db->query("UPDATE tasks SET order_number = $newOrder WHERE id = $draggedId");
+
+    $db->query("SET @rank := 0;");
+    $db->query("UPDATE tasks 
+                SET order_number = (@rank := @rank + 1) 
+                WHERE user_id = $uid AND status = 'pending' 
+                ORDER BY order_number ASC, smart_score DESC");
+
+    respond(true, 'Manual priority saved and normalized.');
 }
 
 // ════════════════════════════════════════════════════════
@@ -135,8 +188,8 @@ if ($method === 'POST' && $action === 'update') {
     $category = trim($body['category'] ?? 'General');
     $subject  = trim($body['subject'] ?? 'General');
     $priority = trim($body['priority'] ?? 'Medium');
-    $date     = trim($body['task_date'] ?? '');
-    $time     = trim($body['task_time'] ?? '00:00:00');
+    $date = !empty(trim($body['task_date'] ?? '')) ? trim($body['task_date']) : date('Y-m-d');
+    $time = !empty(trim($body['task_time'] ?? '')) ? trim($body['task_time']) : '00:00:00';
     $est_time = (int)($body['estimated_time'] ?? 60);
     $urgent   = (int)($body['is_urgent'] ?? 0);
     $important= (int)($body['is_important'] ?? 0);
@@ -144,18 +197,20 @@ if ($method === 'POST' && $action === 'update') {
     $color    = trim($body['color'] ?? '#00B4BE');
 
     if (!$tid || !$title || !$date) respond(false, 'Missing required fields.');
+    
+    $smart_score = calculateScore($priority, $urgent, $important);
 
     $db = getDB();
     $stmt = $db->prepare('UPDATE tasks SET 
         title=?, description=?, category=?, task_date=?, task_time=?, 
         subject=?, priority=?, estimated_time=?, is_urgent=?, 
-        is_important=?, reminder=?, color=? 
+        is_important=?, reminder=?, color=?, smart_score=? 
         WHERE id=? AND user_id=?');
 
-    $stmt->bind_param('sssssssiiiisii', 
+    $stmt->bind_param('sssssssiiiisiii', 
         $title, $desc, $category, $date, $time, 
         $subject, $priority, $est_time, $urgent, 
-        $important, $reminder, $color, $tid, $uid
+        $important, $reminder, $color, $smart_score, $tid, $uid
     );
     
     if ($stmt->execute()) {

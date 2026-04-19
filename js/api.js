@@ -39,6 +39,7 @@ const API = {
    logout:        ()  => _req(`${_base}/auth.php?action=logout`),
    getMe:         ()  => _req(`${_base}/auth.php?action=me`),
    updateProfile: (d) => _req(`${_base}/auth.php?action=update`,  { method:'POST', body: JSON.stringify(d) }),
+   changePassword: (d) => _req(`${_base}/auth.php?action=change_password`, { method:'POST', body: JSON.stringify(d) }),
    deleteAccount: ()  => _req(`${_base}/auth.php?action=delete`,  { method:'DELETE' }),
    // Tasks
    getTasks:    (p={}) => _req(`${_base}/tasks.php?action=list&${new URLSearchParams(p)}`),
@@ -46,13 +47,19 @@ const API = {
    createTask:  (d)    => _req(`${_base}/tasks.php?action=create`, { method:'POST', body: JSON.stringify(d) }),
    updateTask:  (d)    => _req(`${_base}/tasks.php?action=update`, { method:'POST', body: JSON.stringify(d) }),
    toggleTask:  (id)   => _req(`${_base}/tasks.php?action=toggle`, { method:'POST', body: JSON.stringify({ id }) }),
+   reorderTasks: (d) => _req(`${_base}/tasks.php?action=reorder`, { method:'POST', body: JSON.stringify(d) }),
    deleteTask:  (id)   => _req(`${_base}/tasks.php?action=delete&id=${id}`, { method:'DELETE' }),
    // Schedules
    getSchedules:   (p={}) => _req(`${_base}/schedule.php?action=list&${new URLSearchParams(p)}`),
    createSchedule: (d)    => _req(`${_base}/schedule.php?action=create`, { method:'POST', body: JSON.stringify(d) }),
    deleteSchedule: (id)   => _req(`${_base}/schedule.php?action=delete&id=${id}`, { method:'DELETE' }),
    // AI
-   askAI: (prompt) => _req(`${_base}/ai.php`, { method:'POST', body: JSON.stringify({ prompt }) })
+   askAI: (prompt) => _req(`${_base}/ai.php`, { method:'POST', body: JSON.stringify({ prompt }) }),
+   // Notes
+   getNotes: () => _req(`${_base}/notes.php?action=list`),
+   saveNote: (d) => _req(`${_base}/notes.php?action=save`, { method: 'POST', body: JSON.stringify(d) }),
+   starNote: (id) => _req(`${_base}/notes.php?action=star`, { method: 'POST', body: JSON.stringify({ id }) }),
+   deleteNote: (id) => _req(`${_base}/notes.php?id=${id}`, { method: 'DELETE' })
 };
 // ── Toast notification ───────────────────────────────────────────────
 function showToast(msg, type = 'success') {

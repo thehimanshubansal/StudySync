@@ -21,13 +21,17 @@ $ctx = empty($tasks) ? 'No upcoming tasks scheduled.'
 
 $system_instruction = "You are StudySync AI — a smart study planner. 
 The student's current schedule:
-$ctx
 
-Rules:
+IMPORTANT RULES:
+- DO NOT use Markdown.
+- DO NOT use asterisks (*) or bold text (**).
+- Provide response in PLAIN TEXT only.
 - Keep replies under 150 words.
-- Use bullet points for plans.
+- Use simple dashes (-) for lists instead of bullet points.
 - Be encouraging and focus on academic success.
-- If suggesting times, use blocks like '10:00 AM - 11:30 AM'.";
+- If suggesting times, use clear text like '10:00 AM to 11:30 AM'.
+- Focus on the student's actual tasks provided below:
+$ctx";
 
 // 2. Fallback if no key is set
 if (GEMINI_API_KEY === 'YOUR_GEMINI_API_KEY_HERE' || empty(GEMINI_API_KEY)) {
@@ -52,7 +56,9 @@ $payload = [
     ],
     "generationConfig" => [
         "temperature" => 0.7,
-        "maxOutputTokens" => 800
+        "maxOutputTokens" => 2048,
+        "topP" => 0.95,
+        "topK" => 40
     ]
 ];
 
@@ -63,7 +69,7 @@ curl_setopt_array($ch, [
     CURLOPT_POSTFIELDS      => json_encode($payload),
     CURLOPT_HTTPHEADER      => ['Content-Type: application/json'],
     CURLOPT_SSL_VERIFYPEER  => false, // Crucial for XAMPP
-    CURLOPT_TIMEOUT         => 30
+    CURLOPT_TIMEOUT         => 60
 ]);
 
 $res  = curl_exec($ch);
@@ -77,6 +83,13 @@ if ($code !== 200) {
 }
 
 $data = json_decode($res, true);
+
+// ai response detection code 
+$reason = $data['candidates'][0]['finishReason'] ?? 'UNKNOWN';
+if ($reason !== 'STOP') {
+    // If it says 'MAX_TOKENS', your limit is too low.
+    error_log("Gemini stopped because: " . $reason); 
+}
 
 // Gemini Response Path: candidates[0] -> content -> parts[0] -> text
 $reply = $data['candidates'][0]['content']['parts'][0]['text'] ?? 'AI could not generate a response.';

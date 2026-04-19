@@ -135,6 +135,9 @@
                 <button onclick="window.location.href='notes.html'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-500 hover:text-sync hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
                     <i class="fas fa-sticky-note"></i> <span>My Notes</span>
                 </button>
+                <button onclick="window.location.href='profile.html'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-500 hover:text-sync transition-all">
+                    <i class="fas fa-user"></i> <span>Profile</span>
+                </button>                
 
                 <div class="pt-6">
                     <button onclick="handleLogout()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-rose-500 hover:bg-rose-500/10 transition-all">
@@ -179,24 +182,35 @@
                     </div>
                 </div>
 
-                <!-- VIEW CONTAINERS -->
+                <!-- NAVIGATION CONTROLS -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between px-2 pt-6 gap-4">
+                    <h2 id="viewTitle" class="text-xl font-black tracking-tight">Daily Timeline</h2>
+                    
+                    <div class="flex items-center gap-2 bg-white dark:bg-[#0b1120] p-1.5 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
+                        <button onclick="navigateDate(-1)" class="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-slate-500 hover:text-sync transition-all">
+                            <i class="fas fa-chevron-left text-xs"></i>
+                        </button>
+                        
+                        <button onclick="goToToday()" class="px-4 h-10 flex items-center justify-center rounded-xl bg-slate-50 dark:bg-white/5 text-[10px] font-black uppercase tracking-widest hover:text-sync transition-all">
+                            Today
+                        </button>
+                        
+                        <button onclick="navigateDate(1)" class="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-slate-500 hover:text-sync transition-all">
+                            <i class="fas fa-chevron-right text-xs"></i>
+                        </button>
+                    </div>
                 </div>
 
-                <h2 id="viewTitle" class="text-xl font-black px-2 pt-4">Daily Timeline</h2>
-
                 <!-- DAY VIEW -->
-                <div id="dayContent" class="hidden bg-white dark:bg-[#0b1120] rounded-[2rem] border border-slate-200 dark:border-white/5 divide-y dark:divide-white/5 overflow-hidden shadow-sm"></div>
+                <div id="dayContent" class="hidden mt-6 bg-white dark:bg-[#0b1120] rounded-[2rem] border border-slate-200 dark:border-white/5 divide-y dark:divide-white/5 overflow-hidden shadow-sm"></div>
 
-                <!-- WEEK VIEW (New) -->
-                <div id="weekContent" class="hidden bg-white dark:bg-[#0b1120] rounded-[2rem] border border-slate-200 dark:border-white/5 overflow-hidden grid grid-cols-7 shadow-sm divide-x dark:divide-white/5"></div>
+                <!-- WEEK VIEW -->
+                <div id="weekContent" class="hidden mt-6 bg-white dark:bg-[#0b1120] rounded-[2rem] border border-slate-200 dark:border-white/5 overflow-hidden grid grid-cols-7 shadow-sm divide-x dark:divide-white/5"></div>
 
                 <!-- MONTH VIEW -->
-                <div id="monthContent" class="hidden bg-white dark:bg-[#0b1120] rounded-[2rem] border border-slate-200 dark:border-white/5 overflow-hidden grid grid-cols-7 shadow-sm">
-                    <div class="flex justify-center gap-4 mt-6">
-                        <button onclick="changeMonth(-1)" class="p-3 rounded-xl bg-white dark:bg-[#0b1120] border border-slate-200 dark:border-white/5 hover:text-sync"><i class="fas fa-chevron-left"></i></button>
-                        <span id="monthName" class="p-3 font-black uppercase text-xs tracking-widest">Month Year</span>
-                        <button onclick="changeMonth(1)" class="p-3 rounded-xl bg-white dark:bg-[#0b1120] border border-slate-200 dark:border-white/5 hover:text-sync"><i class="fas fa-chevron-right"></i></button>
-                    </div>
+                <!-- Note: monthName title is now handled by the main viewTitle -->
+                <div id="monthContent" class="hidden mt-6 bg-white dark:bg-[#0b1120] rounded-[2rem] border border-slate-200 dark:border-white/5 overflow-hidden grid grid-cols-7 shadow-sm">
+                    <!-- Month Grid injected here -->
                 </div>
             </div>
         </main>
@@ -243,16 +257,16 @@
                         <input id="taskEstTime" type="number" value="60" class="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl outline-none border border-slate-200 dark:border-slate-700">
                     </div>
                     <div>
-                        <label class="block text-[10px] font-black uppercase text-slate-400">Deadline</label>
-                        <input id="taskDate" type="date" required class="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl outline-none border border-slate-200 dark:border-slate-700">
+                        <label class="block text-[10px] font-black uppercase text-slate-400">Schedule Date</label>
+                        <input id="taskDate" type="date" class="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl outline-none border border-slate-200 dark:border-slate-700">
                     </div>
                 </div>
 
                 <!-- Row 4: Clock Time (Added) & Checkboxes -->
                 <div class="flex items-center justify-between gap-4">
                     <div class="flex-1">
-                        <label class="block text-[10px] font-black uppercase text-slate-400">Start Time</label>
-                        <input id="taskClockTime" type="time" class="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl outline-none border border-slate-200 dark:border-slate-700">
+                        <label class="block text-[10px] font-black uppercase text-slate-400">Schedule Time</label>
+                        <input id="taskClockTime" type="time" value="00:00:00" class="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl outline-none border border-slate-200 dark:border-slate-700">
                     </div>
                     <div class="flex items-center gap-4 pt-4">
                         <label class="flex items-center gap-1 text-[10px] font-bold"><input type="checkbox" id="taskUrgent"> URGENT</label>
@@ -325,6 +339,7 @@
     <!-- MODALS & JS (Same as before with updated dark mode toggle) -->
     <script>
         let currentMonth = new Date();
+        let currentUser = null;
 
         function toggleSidebar() {
             const sb = document.getElementById('sidebar');
@@ -342,16 +357,19 @@
         }
 
         async function initDashboard(user) {
+            currentUser = user; // Store user globally
             populateSidebar(user);
             
-            // Always fetch and render all data on initialization
-            await updateGist();
-            await renderDayTimeline();
-            await renderWeekView();
-            await renderMonthView();
-            await calculateSmartSchedule(); 
+            const tasksRes = await API.getTasks();
+            const tasks = tasksRes.success ? tasksRes.data : [];
 
-            // SESSION STORAGE: Restore the last view the user was using
+            // Initialize all views
+            await updateGist();
+            await generateVirtualSchedule(user, tasks); // Pass both user and fresh tasks
+            const localDate = new Date(currentMonth.getTime() - (currentMonth.getTimezoneOffset() * 60 * 1000));
+            refreshViews();
+            calculateSmartSchedule(); 
+
             const savedView = sessionStorage.getItem('currentView') || 'day';
             switchView(savedView);
         }
@@ -376,15 +394,69 @@
             if(res.success) {
                 showToast("Task updated!");
                 // Refresh all components to reflect completion
-                updateGist();
-                renderDayTimeline();
-                renderWeekView();
-                renderMonthView();
-                calculateSmartSchedule(); 
+                const tasksRes = await API.getTasks();
+                const tasks = tasksRes.success ? tasksRes.data : [];
+
+                // Initialize all views
+                await updateGist();
+                await generateVirtualSchedule(user, tasks); 
+                await calculateSmartSchedule();      
+                refreshViews();
             } else {
                 showToast("Error updating task", "error");
             }
         }
+
+        function navigateDate(direction) {
+            const currentView = sessionStorage.getItem('currentView') || 'day';
+
+            if (currentView === 'day') {
+                currentMonth.setDate(currentMonth.getDate() + direction);
+            } 
+            else if (currentView === 'week') {
+                currentMonth.setDate(currentMonth.getDate() + (direction * 7));
+            } 
+            else if (currentView === 'month') {
+                currentMonth.setMonth(currentMonth.getMonth() + direction);
+            }
+
+            refreshViews();
+        }
+
+        function goToToday() {
+            currentMonth = new Date();
+            refreshViews();
+        }
+
+        async function refreshViews() {
+            const currentView = sessionStorage.getItem('currentView') || 'day';
+            const localDate = new Date(currentMonth.getTime() - (currentMonth.getTimezoneOffset() * 60 * 1000));
+            const dateStr = localDate.toISOString().split('T')[0];
+
+            // Update the UI Header Title
+            const title = document.getElementById('viewTitle');
+            if (currentView === 'day') {
+                title.innerText = currentMonth.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+                await renderDayTimeline(dateStr);
+            } 
+            else if (currentView === 'week') {
+                title.innerText = "Week of " + getStartOfWeek(currentMonth).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                await renderWeekView(currentMonth);
+            } 
+            else if (currentView === 'month') {
+                title.innerText = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                await renderMonthView(currentMonth);
+            }
+        }
+
+        // Helper to find Monday of the week
+        function getStartOfWeek(d) {
+            const date = new Date(d);
+            const day = date.getDay();
+            const diff = date.getDate() - day + (day === 0 ? -6 : 1); 
+            return new Date(date.setDate(diff));
+        }
+
 
         function switchView(view) {
             const dv = document.getElementById('dayContent');
@@ -429,6 +501,7 @@
 
             // 4. Persistence
             sessionStorage.setItem('currentView', view);
+            refreshViews(); 
         }
 
 
@@ -455,119 +528,16 @@
                 showToast("Task Created!");
                 toggleModal('taskModal');
                 // REFRESH EVERYTHING
-                renderDayTimeline();
-                renderMonthView();
                 updateGist();
                 calculateSmartSchedule();
+                const tasksRes = await API.getTasks();
+                await generateVirtualSchedule(currentUser, tasksRes.data);
+                refreshViews();
                 e.target.reset();
             } else {
                 showToast(res.message, "error");
             }
         };
-
-        async function renderDayTimeline() {
-            const container = document.getElementById('dayContent');
-            const today = new Date().toISOString().split('T')[0];
-            const res = await API.getTasks({ date: today });
-            const tasks = res.success ? res.data : [];
-
-            let html = '';
-            for (let i = 0; i < 24; i++) {
-                const hour = i === 0 ? 12 : (i > 12 ? i - 12 : i);
-                const ampm = i < 12 ? 'AM' : 'PM';
-                // Inside renderDayTimeline loop
-                const hourTasks = tasks.filter(t => {
-                    if (!t.task_time) return false;
-                    // Extract hour from "HH:MM:SS"
-                    const h = parseInt(t.task_time.split(':')[0]);
-                    return h === i;
-                });
-
-                html += `
-                <div class="flex min-h-[80px]">
-                    <div class="w-20 p-6 text-right text-[10px] font-black text-slate-400 border-r dark:border-white/5">${hour} ${ampm}</div>
-                    <div class="flex-1 p-2 flex flex-wrap gap-2 items-center">
-                        ${hourTasks.map(t => `
-                            <div onclick="toggleTask(${t.id})" 
-                                class="task-card px-4 py-2 rounded-xl text-xs font-bold cursor-pointer ${t.status === 'completed' ? 'opacity-40 line-through bg-slate-200 text-slate-600' : 'text-white shadow-lg'}"
-                                style="background: ${t.status === 'completed' ? '' : t.color};">
-                                ${t.status === 'completed' ? '✓ ' : ''}${t.title}
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>`;
-            }
-            container.innerHTML = html;
-        }
-
-        async function renderWeekView() {
-            const container = document.getElementById('weekContent');
-            container.innerHTML = '';
-            const curr = new Date();
-            const res = await API.getTasks(); // Fetch all
-            const tasks = res.success ? res.data : [];
-
-            for (let i = 0; i < 7; i++) {
-                let day = new Date(curr.setDate(curr.getDate() - curr.getDay() + i));
-                let dateStr = day.toISOString().split('T')[0];
-                let dayTasks = tasks.filter(t => t.task_date === dateStr);
-
-                container.innerHTML += `
-                    <div class="min-h-[400px] flex flex-col">
-                        <div class="p-4 border-b dark:border-white/5 bg-slate-50/50 dark:bg-white/5 text-center">
-                            <p class="text-[10px] font-black text-slate-400 uppercase">${day.toLocaleDateString('en-US', { weekday: 'short' })}</p>
-                            <p class="text-sm font-black">${day.getDate()}</p>
-                        </div>
-                        <div class="flex-1 p-2 space-y-2">
-                            ${dayTasks.map(t => `
-                                <div onclick="toggleTask(${t.id})" class="p-2 rounded-lg text-[9px] font-bold text-white cursor-pointer shadow-sm" style="background:${t.status === 'completed' ? '#cbd5e1' : t.color}">
-                                    ${t.title}
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>`;
-            }
-        }
-
-        async function renderMonthView() {
-            const grid = document.getElementById('monthContent');
-            if(!grid) return;
-            grid.innerHTML = '';
-            const monthLabel = document.getElementById('monthName');
-            const year = currentMonth.getFullYear();
-            const month = currentMonth.getMonth();
-            if(monthLabel) monthLabel.innerText = currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' });
-
-            ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(day => {
-                grid.innerHTML += `<div class="p-3 text-center text-[9px] font-black uppercase text-slate-400 border-b dark:border-white/5 bg-slate-50/50 dark:bg-white/5">${day}</div>`;
-            });
-
-            const firstDay = new Date(year, month, 1).getDay();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-            // Fetching tasks for the whole month
-            const monthStr = `${year}-${String(month + 1).padStart(2, '0')}`;
-            const res = await API.getTasks({ month: monthStr });
-            const tasks = res.success ? res.data : [];
-
-            for (let i = 0; i < firstDay; i++) grid.innerHTML += `<div class="p-6 border-b border-r dark:border-white/5 opacity-20"></div>`;
-            for (let d = 1; d <= daysInMonth; d++) {
-                const dateStr = `${year}-${String(month+1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                const dayTasks = tasks.filter(t => t.task_date === dateStr);
-                grid.innerHTML += `
-                    <div class="p-6 border-b border-r dark:border-white/5 text-center relative hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer">
-                        <span class="text-xs font-bold">${d}</span>
-                        <div class="flex justify-center gap-0.5 mt-1">
-                            ${dayTasks.map(t => `<div class="w-1.5 h-1.5 rounded-full" style="background:${t.color}"></div>`).join('')}
-                        </div>
-                    </div>`;
-            }
-        }
-
-        function changeMonth(step) {
-            currentMonth.setMonth(currentMonth.getMonth() + step);
-            renderMonthView();
-        }
 
         async function calculateSmartSchedule() {
             const res = await API.getTasks(); 
@@ -598,7 +568,17 @@
                     <div class="bg-white dark:bg-[#0b1120] p-4 rounded-2xl shadow-sm flex flex-col justify-between border-l-4" style="border-color: ${t.color}">
                         <div>
                             <div class="flex justify-between items-start mb-2">
-                                <span class="text-[9px] font-bold px-2 py-0.5 rounded uppercase" style="background:${t.color}20; color:${t.color}">${t.subject || 'General'}</span>
+                                <!-- Left side: Subject Badge -->
+                                <span class="text-[9px] font-bold px-2 py-0.5 rounded uppercase" style="background:${t.color}20; color:${t.color}">
+                                    ${t.subject || 'General'}
+                                </span>
+                                
+                                <!-- Right side: Smart Score -->
+                                <div class="text-right">
+                                    <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                                        <i class="fas fa-bolt text-[8px] text-amber-500"></i> ${t.smartScore}
+                                    </span>
+                                </div>
                             </div>
                             <h4 class="font-bold text-sm dark:text-white">${t.title}</h4>
                         </div>
@@ -608,6 +588,232 @@
                     </div>
                 `).join('');
             }
+        }
+
+
+        let virtualSchedule = {};
+
+        async function generateVirtualSchedule(user, tasks) {
+            const dailyCapacityMins = (user.daily_capacity) * 60;
+            
+            // 1. Calculate AI Scores & Sort
+            let taskPool = tasks.filter(t => t.status === 'pending').map(t => {
+                let score = 0;
+                if (t.priority === 'High') score += 50;
+                else if (t.priority === 'Medium') score += 25;
+                if (parseInt(t.is_urgent) === 1) score += 40;
+                if (parseInt(t.is_important) === 1) score += 30;
+                
+                return { 
+                    ...t, 
+                    smartScore: score,
+                    remainingMins: parseInt(t.estimated_time) || 60 
+                };
+            });
+
+
+            // 3. Distribute across days (Resource Allocation)
+            let schedule = {};
+            let currentDate = new Date();
+            currentDate.setHours(0,0,0,0);
+
+            let fixedTasks = taskPool.filter(t => t.status === 'pending' && t.task_time !== '00:00:00');
+            let floatingTasks = taskPool.filter(t => t.status === 'pending' && (t.task_time === '00:00:00' || !t.task_time));
+
+            // 2. Sort Floating Tasks (Manual Order > AI Smart Score)
+            floatingTasks.sort((a, b) => {
+                if (a.order_number !== b.order_number) {
+                    if (a.order_number === 0) return 1;
+                    if (b.order_number === 0) return -1;
+                    return a.order_number - b.order_number;
+                }
+                return b.smart_score - a.smart_score;
+            });
+
+            for (let i = 0; i < 30; i++) { 
+                const localDate = new Date(currentDate.getTime() - (currentDate.getTimezoneOffset() * 60 * 1000));
+                const dateKey = localDate.toISOString().split('T')[0];
+                schedule[dateKey] = [];
+                let minsUsedToday = 0;
+
+                const fixedToday = fixedTasks.filter(t => t.task_date === dateKey);
+                fixedToday.forEach(t => {
+                    schedule[dateKey].push({ ...t, isFixed: true, segmentMins: t.estimated_time });
+                    minsUsedToday += parseInt(t.estimated_time);
+                });
+
+                // B. Fill the remaining capacity with Floating Tasks
+                for (let task of floatingTasks) {
+                    if (!task.remainingMins) task.remainingMins = parseInt(task.estimated_time);
+                    if (task.remainingMins <= 0) continue;
+
+                    let spaceLeft = dailyCapacityMins - minsUsedToday;
+                    if (spaceLeft <= 0) break; // Daily study limit reached
+
+                    let minsToAssign = Math.min(task.remainingMins, spaceLeft);
+                    schedule[dateKey].push({
+                        ...task,
+                        isFixed: false,
+                        segmentMins: minsToAssign,
+                        isContinuation: task.remainingMins < task.estimated_time
+                    });
+
+                    task.remainingMins -= minsToAssign;
+                    minsUsedToday += minsToAssign;
+                }
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+            virtualSchedule = schedule;
+        }
+        
+        async function renderDayTimeline(targetDate) {
+            const container = document.getElementById('dayContent');
+            const dayTasks = virtualSchedule[targetDate] || [];
+            
+            let html = `<div class="relative min-h-[1440px]">`; // 24h * 60px/h
+            
+            // 1. Draw Grid Lines
+            for (let i = 0; i < 24; i++) {
+                const ampm = i < 12 ? 'AM' : 'PM';
+                const h = i === 0 ? 12 : (i > 12 ? i - 12 : i);
+                html += `<div class="h-[60px] border-b dark:border-white/5 flex">
+                            <div class="w-20 p-2 text-[9px] font-black text-slate-400 border-r dark:border-white/5">${h} ${ampm}</div>
+                            <div class="flex-1" ondragover="handleDragOver(event)"></div>
+                        </div>`;
+            }
+
+            // 2. Overlay Stretched Tasks
+            let currentTop = 540; // Start at 9:00 AM (9 * 60px)
+            
+            dayTasks.forEach(t => {
+                const isSmall = t.segmentMins < 30; // Anything less than 30 mins is "small"
+                const height = (t.segmentMins / 60) * 60; // 1px per minute
+                let topPosition;
+                if (t.isFixed) {
+                    // Calculate top based on actual task_time (e.g. "14:30" -> 14.5 * 60)
+                    const [hrs, mins] = t.task_time.split(':').map(Number);
+                    topPosition = (hrs * 60) + mins;
+                } else {
+                    topPosition = currentTop;
+                    currentTop += (t.segmentMins); // Stack next floating task below
+                }
+                const isDraggable = !t.isFixed;
+
+                html += `
+                    <div draggable="${isDraggable}" 
+                        ${isDraggable ? `ondragstart="handleDragStart(event, ${t.id})" ondrop="handleDrop(event, ${t.id})"` : ''}
+                        onclick="toggleTask(${t.id})"
+                        class="absolute left-24 right-4 rounded-xl text-white shadow-lg z-10 flex flex-col justify-center border-l-4 transition-all
+                                ${isDraggable ? 'cursor-grab active:cursor-grabbing border-white/20' : 'cursor-default border-black/30'}"
+                        style="top: ${currentTop}px; 
+                                height: ${Math.max(height, 30)}px; 
+                                background: ${t.color}; 
+                                border-color: rgba(0,0,0,0.2);
+                                padding: ${isSmall ? '2px 8px' : '8px 12px'};">
+                        
+                        <div class="flex flex-row h-full justify-between p-3 pointer-events-none">
+                          
+                            <div class="flex justify-between items-start gap-2">
+                                <div class="flex flex-col truncate">
+                                    <span class="text-[9px] font-black uppercase tracking-widest opacity-80 leading-none mb-1">
+                                        ${t.subject || 'General'}
+                                    </span>
+                                    <h4 class="${isSmall ? 'text-xs' : 'text-sm'} font-bold truncate leading-tight">
+                                        ${t.title}
+                                    </h4>
+                                </div>
+                            </div>                            
+                            ${!isSmall ? `
+                            <div class="flex items-center justify-between mt-1">
+                                <div class="flex items-center gap-2 opacity-80">
+                                    <span class="text-[10px] font-bold flex items-center gap-1">
+                                        <i class="far fa-clock text-[9px]"></i> ${t.segmentMins} mins &ensp;
+                                    </span>
+                                </div>
+                                ${t.smartScore ? `
+                                <span class="text-[10px] font-black bg-black/10 px-2 py-0.5 rounded-lg flex items-center gap-1">
+                                    <i class="fas fa-bolt text-amber-300 text-[8px]"></i> ${t.smartScore}
+                                </span>
+                                ` : ''}
+                            </div>
+                            ` : ''}
+                            <i class="fas ${t.isFixed ? 'fa-thumbtack' : 'fa-grip-vertical'} text-[10px] mt-1 opacity-40"></i>
+                        </div>
+                    </div>`;
+                
+                currentTop += height;
+            });
+
+            container.innerHTML = html + `</div>`;
+        }
+
+        async function renderWeekView(refDate) {
+            const container = document.getElementById('weekContent');
+            container.innerHTML = '';
+            const startOfWeek = getStartOfWeek(refDate);
+
+            for (let i = 0; i < 7; i++) {
+                let day = new Date(startOfWeek);
+                day.setDate(startOfWeek.getDate() + i);
+                let dateStr = day.toISOString().split('T')[0];
+                let daySegments = virtualSchedule[dateStr] || [];
+
+                container.innerHTML += `
+                    <div class="min-h-[500px] flex flex-col border-r dark:border-white/5">
+                        <div class="p-4 border-b dark:border-white/5 bg-slate-50/50 dark:bg-white/5 text-center">
+                            <p class="text-[10px] font-black text-slate-400 uppercase">${day.toLocaleDateString('en-US', { weekday: 'short' })}</p>
+                            <p class="text-sm font-black">${day.getDate()}</p>
+                        </div>
+                        <div class="flex-1 p-2 space-y-1 overflow-y-auto main-scrollbar">
+                            ${daySegments.map(seg => `
+                                <div class="p-2 rounded-lg text-[9px] font-bold text-white shadow-sm border-l-4 border-black/10" 
+                                    style="background:${seg.color}">
+                                    <div class="truncate">${seg.title}</div>
+                                    <div class="opacity-70">${seg.segmentMins}m</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>`;
+            }
+        }
+        
+        
+        async function renderMonthView(refDate) {
+            const grid = document.getElementById('monthContent');
+            if(!grid) return;
+            grid.innerHTML = '';
+            const year = refDate.getFullYear();
+            const month = refDate.getMonth();
+            
+            ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(day => {
+                grid.innerHTML += `<div class="p-3 text-center text-[9px] font-black uppercase text-slate-400 border-b dark:border-white/5 bg-slate-50/50 dark:bg-white/5">${day}</div>`;
+            });
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            // Fetching tasks for the whole month
+            const monthStr = `${year}-${String(month + 1).padStart(2, '0')}`;
+            const res = await API.getTasks({ month: monthStr });
+            const tasks = res.success ? res.data : [];
+
+            for (let i = 0; i < firstDay; i++) grid.innerHTML += `<div class="p-6 border-b border-r dark:border-white/5 opacity-20"></div>`;
+            for (let d = 1; d <= daysInMonth; d++) {
+                const dateStr = `${year}-${String(month+1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const dayTasks = tasks.filter(t => t.task_date === dateStr);
+                grid.innerHTML += `
+                    <div class="p-6 border-b border-r dark:border-white/5 text-center relative hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer">
+                        <span class="text-xs font-bold">${d}</span>
+                        <div class="flex justify-center gap-0.5 mt-1">
+                            ${dayTasks.map(t => `<div class="w-1.5 h-1.5 rounded-full" style="background:${t.color}"></div>`).join('')}
+                        </div>
+                    </div>`;
+            }
+        }
+
+        function changeMonth(step) {
+            currentMonth.setMonth(currentMonth.getMonth() + step);
+            renderMonthView();
         }
 
         // AI PANEL LOGIC
@@ -658,6 +864,40 @@
             }
             
             chatBody.scrollTop = chatBody.scrollHeight;
+        }
+
+        // Task dragging
+        function handleDragStart(e, taskId) {
+            e.dataTransfer.setData("taskId", taskId);
+            e.target.style.opacity = "0.5";
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault(); // Necessary to allow drop
+            e.dataTransfer.dropEffect = "move";
+        }
+
+        async function handleDrop(e, targetTaskId) {
+            e.preventDefault();
+            const draggedTaskId = e.dataTransfer.getData("text/plain");
+            if (draggedTaskId == targetTaskId) return;
+
+            try {
+                const res = await API.reorderTasks({ 
+                    draggedId: parseInt(draggedId), 
+                    targetId: parseInt(targetTaskId) 
+                });
+                
+                if(res.success) {
+                    showToast("Schedule updated");
+                    // Re-fetch and re-run engine
+                    const tasksRes = await API.getTasks();
+                    await generateVirtualSchedule(currentUser, tasksRes.data);
+                    refreshViews(); // This will re-render the timeline
+                }
+            } catch (err) {
+                console.error("Drop failed", err);
+            }
         }
 
         // Handle Manual Input

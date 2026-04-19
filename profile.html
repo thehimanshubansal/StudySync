@@ -29,8 +29,20 @@
 
         (async () => {
             const user = await requireLogin();
-            if(user){
-                window.addEventListener('DOMContentLoaded', () => initProfile(user));
+            if (user) {
+                // Function to start the dashboard
+                const startApp = () => {
+                    initProfile(user);
+                };
+
+                // If DOM is already loaded, run immediately. Otherwise, wait for it.
+                if (document.readyState === "loading") {
+                    window.addEventListener('DOMContentLoaded', startApp);
+                } else {
+                    startApp();
+                }
+            } else {
+                console.error("Auth failed or no user found.");
             }
         })();
     </script>
@@ -43,6 +55,11 @@
         .main-scrollbar::-webkit-scrollbar { width: 4px; }
         .main-scrollbar::-webkit-scrollbar-thumb { background: #00B4BE; border-radius: 10px; }
         #sidebar { transition: width 0.3s ease; }
+        input:focus, select:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px #00B4BE;
+            border-color: transparent;
+        }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-[#020617] text-slate-800 dark:text-slate-200 overflow-hidden transition-colors duration-300">
@@ -90,6 +107,9 @@
                 <div class="p-1 bg-slate-100 dark:bg-white/5 rounded-2xl flex flex-col gap-1">
                     <button onclick="window.location.href='dashboard.html'" class="flex items-center gap-3 px-4 py-2 rounded-xl text-xs font-bold transition-all text-slate-500 hover:text-sync">
                         <i class="fas fa-list"></i> Day Timeline
+                    </button>                    
+                    <button onclick="window.location.href='dashboard.html'"  class="flex items-center gap-3 px-4 py-2 rounded-xl text-xs font-bold transition-all text-slate-500 hover:text-sync">
+                        <i class="fas fa-calendar-week"></i> Week View
                     </button>
                     <button onclick="window.location.href='dashboard.html'" class="flex items-center gap-3 px-4 py-2 rounded-xl text-xs font-bold transition-all text-slate-500 hover:text-sync">
                         <i class="fas fa-th-large"></i> Month Grid
@@ -105,11 +125,15 @@
                 </button>
 
                 <p class="px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 pt-4">Insights</p>
-                <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold bg-sync/10 text-sync">
+                <button onclick="window.location.href='progress.html'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-500 hover:text-sync hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
                     <i class="fas fa-chart-pie"></i> <span>Progress Report</span>
                 </button>
                 <button onclick="window.location.href='notes.html'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-500 hover:text-sync hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
                     <i class="fas fa-sticky-note"></i> <span>My Notes</span>
+                </button>
+                </button>
+                <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold bg-sync/10 text-sync">
+                    <i class="fas fa-user"></i> <span>Profile</span>
                 </button>
 
                 <div class="pt-6">
@@ -121,78 +145,70 @@
         </aside>
 
         <!-- MAIN CONTENT -->
-        <main class="flex-1 overflow-y-auto main-scrollbar p-6 lg:p-8">
-            <div class="max-w-5xl mx-auto space-y-8">
-                
-                <h2 class="text-2xl font-black px-2">User Profile</h2>
+        <main class="flex-1 overflow-y-auto main-scrollbar p-6 lg:p-8 bg-slate-50 dark:bg-[#020617]">
+            <div class="max-w-4xl mx-auto space-y-8 pb-20">
+                <h2 class="text-3xl font-black px-2 tracking-tight">Account Settings</h2>
 
-                <!-- ACCOUNT DETAILS CARD -->
-                <div class="bg-white dark:bg-[#0b1120] rounded-[2rem] border border-slate-200 dark:border-white/5 shadow-sm overflow-hidden">
+                <!-- PERSONAL INFO FORM -->
+                <section class="bg-white dark:bg-[#0b1120] rounded-[2rem] border border-slate-200 dark:border-white/5 shadow-sm overflow-hidden">
                     <div class="p-6 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 flex items-center justify-between">
-                        <h3 class="font-bold text-sm uppercase tracking-widest text-slate-500">Account Details</h3>
-                        <button class="text-sync text-xs font-bold hover:underline">Edit Details</button>
+                        <h3 class="font-bold text-xs uppercase tracking-[0.2em] text-slate-400">Identity & Capacity</h3>
                     </div>
-                    <div class="p-8 flex flex-col lg:flex-row gap-10 items-center">
-                        <div class="w-32 h-32 rounded-[2rem] bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 text-4xl font-black border-4 border-white dark:border-slate-800 shadow-lg shrink-0">
-                            U
-                        </div>
-                        <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 w-full">
-                            <div>
-                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Full Name</label>
-                                <div id="prof-name" class="text-slate-700 dark:text-slate-200 font-bold p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5 min-h-[56px] flex items-center"></div>
+                    <form id="profileForm" class="p-8 space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
+                                <input id="edit-name" type="text" class="w-full p-4 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-2xl font-bold text-sm">
                             </div>
-                            <div>
-                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Email Address</label>
-                                <div id="prof-email" class="text-slate-700 dark:text-slate-200 font-bold p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5 min-h-[56px] flex items-center"></div>
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
+                                <input id="edit-email" type="email" class="w-full p-4 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-2xl font-bold text-sm">
                             </div>
-                            <div>
-                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Phone Number</label>
-                                <div id="prof-phone" class="text-slate-700 dark:text-slate-200 font-bold p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5 min-h-[56px] flex items-center"></div>
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Date of Birth</label>
-                                <div id="prof-dob" class="text-slate-700 dark:text-slate-200 font-bold p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5 min-h-[56px] flex items-center"></div>
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Daily Study Hours</label>
+                                <input id="edit-capacity" type="number" min="1" max="24" class="w-full p-4 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-2xl font-bold text-sm">
                             </div>
                         </div>
-                    </div>
-                </div>
+                        <div class="flex justify-end pt-4">
+                            <button type="submit" class="bg-sync text-white px-8 py-2 rounded-2xl font-black shadow-lg shadow-sync/20 hover:scale-105 transition-all">Save Profile</button>
+                        </div>
+                    </form>
+                </section>
 
-                <!-- PROGRESS STATS -->
-                <div class="space-y-4">
-                    <h3 class="font-bold text-sm uppercase tracking-widest text-slate-500 px-2">Study Progress</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div class="bg-white dark:bg-[#0b1120] p-6 rounded-3xl border border-slate-200 dark:border-white/5 shadow-sm">
-                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Tasks</p>
-                            <p id="stat-total" class="text-3xl font-black mt-2">0</p>
-                        </div>
-                        <div class="bg-white dark:bg-[#0b1120] p-6 rounded-3xl border border-slate-200 dark:border-white/5 shadow-sm">
-                            <p class="text-[10px] font-black text-amber-500 uppercase tracking-widest">Pending</p>
-                            <p id="stat-pending" class="text-3xl font-black mt-2">0</p>
-                        </div>
-                        <div class="bg-white dark:bg-[#0b1120] p-6 rounded-3xl border border-slate-200 dark:border-white/5 shadow-sm">
-                            <p class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Completed</p>
-                            <p id="stat-completed" class="text-3xl font-black mt-2">0</p>
-                        </div>
-                        <div class="bg-white dark:bg-[#0b1120] p-6 rounded-3xl border border-slate-200 dark:border-white/5 shadow-sm">
-                            <p class="text-[10px] font-black text-rose-500 uppercase tracking-widest">Streak</p>
-                            <p id="stat-streak" class="text-3xl font-black mt-2">🔥 0</p>
-                        </div>
+                <!-- PASSWORD SECTION -->
+                <section class="bg-white dark:bg-[#0b1120] rounded-[2rem] border border-slate-200 dark:border-white/5 shadow-sm overflow-hidden">
+                    <div class="p-6 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5">
+                        <h3 class="font-bold text-xs uppercase tracking-[0.2em] text-slate-400">Security & Credentials</h3>
                     </div>
-                </div>
-
-                <!-- DELETE SECTION -->
-                <div class="pt-6">
-                    <div class="rounded-[2rem] border border-rose-100 dark:border-rose-900/20 bg-rose-50/30 dark:bg-rose-900/5 p-8 flex flex-col md:flex-row items-center justify-between gap-6">
-                        <div class="text-center md:text-left">
-                            <h4 class="text-rose-600 font-bold text-lg">Delete Account</h4>
-                            <p class="text-slate-500 dark:text-slate-400 text-sm mt-1 font-medium">Permanently remove your account and all study data. Irreversible.</p>
+                    <form id="passwordForm" class="p-8 space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Current Password</label>
+                                <input id="pass-current" type="password" class="w-full p-4 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-2xl text-sm">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">New Password</label>
+                                <input id="pass-new" type="password" class="w-full p-4 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-2xl text-sm">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Confirm New</label>
+                                <input id="pass-confirm" type="password" class="w-full p-4 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-2xl text-sm">
+                            </div>
                         </div>
-                        <button onclick="deleteAccount()" class="bg-rose-500 text-white px-10 py-4 rounded-2xl font-black hover:bg-rose-600 transition shadow-lg shadow-rose-200 whitespace-nowrap">
-                            Delete My Account
-                        </button>
-                    </div>
-                </div>
+                        <div class="flex justify-end pt-4">
+                            <button type="submit" class="bg-study text-white px-8 py-2 rounded-2xl font-black shadow-lg hover:scale-105 transition-all">Update Password</button>
+                        </div>
+                    </form>
+                </section>
 
+                <!-- DANGER ZONE -->
+                <section class="rounded-[2rem] border border-rose-100 dark:border-rose-900/20 bg-rose-50/30 dark:bg-rose-900/5 p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div class="text-center md:text-left">
+                        <h4 class="text-rose-600 font-bold text-lg">Permanently Delete Account</h4>
+                        <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">This will remove all your tasks, streaks, and data forever.</p>
+                    </div>
+                    <button onclick="deleteAccount()" class="bg-rose-500 text-white px-8 py-2 rounded-2xl font-black hover:bg-rose-600 transition shadow-lg shadow-rose-500/50">Delete Forever</button>
+                </section>
             </div>
         </main>
     </div>
@@ -215,23 +231,50 @@
 
         async function initProfile(user) {
             populateSidebar(user);
-            
-            // Fill Account Details
-            document.getElementById('prof-name').innerText = user.full_name || 'Not set';
-            document.getElementById('prof-email').innerText = user.email;
-            document.getElementById('prof-phone').innerText = user.phone || 'None';
-            document.getElementById('prof-dob').innerText = user.dob || 'Not set';
-
-            // Fetch Stats
-            const statsRes = await API.getStats();
-            if (statsRes.success) {
-                const s = statsRes.data;
-                document.getElementById('stat-total').innerText = s.total;
-                document.getElementById('stat-pending').innerText = s.pending;
-                document.getElementById('stat-completed').innerText = s.completed;
-                document.getElementById('stat-streak').innerText = `🔥 ${s.streak}`;
-            }
+            // Pre-fill existing data
+            document.getElementById('edit-name').value = user.full_name || '';
+            document.getElementById('edit-email').value = user.email || '';
+            document.getElementById('edit-capacity').value = user.daily_capacity || 4;
         }
+
+        // --- Update Profile AJAX ---
+        document.getElementById('profileForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const data = {
+                full_name: document.getElementById('edit-name').value,
+                email: document.getElementById('edit-email').value,
+                daily_capacity: document.getElementById('edit-capacity').value
+            };
+            const res = await API.updateProfile(data);
+            if(res.success) {
+                showToast("Identity Updated!");
+                // Refresh sidebar name
+                const userRes = await API.getMe();
+                if(userRes.success) populateSidebar(userRes.data);
+            } else {
+                showToast(res.message, "error");
+            }
+        };
+
+        // --- Change Password AJAX ---
+        document.getElementById('passwordForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const current = document.getElementById('pass-current').value;
+            const newPass = document.getElementById('pass-new').value;
+            const confirm = document.getElementById('pass-confirm').value;
+
+            if(!current || !newPass) return showToast("Fields required", "error");
+            if(newPass !== confirm) return showToast("Passwords don't match", "error");
+
+            const res = await API.changePassword({ current_password: current, new_password: newPass });
+            if(res.success) {
+                showToast("Security updated!");
+                e.target.reset();
+            } else {
+                showToast(res.message, "error");
+            }
+        };
+
 
         async function deleteAccount() {
             if (confirm("WARNING: Are you sure? This will delete all your study data forever.")) {

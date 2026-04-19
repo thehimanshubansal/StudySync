@@ -25,7 +25,7 @@ if ($action === 'signup' && $method === 'POST') {
    if ($chk->get_result()->num_rows > 0)
        respond(false, 'An account with this email already exists.');
    $hash = password_hash($password, PASSWORD_BCRYPT);
-   $ins = $db->prepare('INSERT INTO users (full_name, email, password_hash, dob) VALUES (?, ?, ?, ?)');
+   $ins = $db->prepare('INSERT INTO users (full_name, email, password_hash, dob, daily_capacity) VALUES (?, ?, ?, ?, 4)');
    $ins->bind_param('ssss', $name, $email, $hash, $dob);
    if ($ins->execute()) {
        $uid = $db->insert_id;
@@ -35,7 +35,7 @@ if ($action === 'signup' && $method === 'POST') {
        // Log first activity
        $today = date('Y-m-d');
        $db->query("INSERT IGNORE INTO daily_activity (user_id, activity_date) VALUES ($uid, '$today')");
-       respond(true, 'Account created!', ['id' => $uid, 'full_name' => $name, 'email' => $email, 'dob' => $dob]);
+       respond(true, 'Account created!', ['id' => $uid, 'full_name' => $name, 'email' => $email, 'daily_capacity' => 4]);
    }
    respond(false, 'Signup failed. Please try again.');
 }
@@ -48,7 +48,7 @@ if ($action === 'login' && $method === 'POST') {
    if (!$email || !$password)
        respond(false, 'Email and password are required.');
    $db   = getDB();
-   $stmt = $db->prepare('SELECT id, full_name, email, password_hash, dob FROM users WHERE email = ?');
+   $stmt = $db->prepare('SELECT id, full_name, email, password_hash, dob, daily_capacity FROM users WHERE email = ?');
    $stmt->bind_param('s', $email);
    $stmt->execute();
    $user = $stmt->get_result()->fetch_assoc();
@@ -78,31 +78,63 @@ if ($action === 'logout') {
 if ($action === 'me') {
    $uid  = requireAuth();
    $db   = getDB();
-   $stmt = $db->prepare('SELECT id, full_name, email, dob FROM users WHERE id = ?');
+   $stmt = $db->prepare('SELECT id, full_name, email, dob, daily_capacity FROM users WHERE id = ?');
    $stmt->bind_param('i', $uid);
    $stmt->execute();
    $user = $stmt->get_result()->fetch_assoc();
+
    if (!$user) respond(false, 'User not found.');
-   $user['dob']   = $user['dob']   ?? '';
    respond(true, '', $user);
 }
 // ════════════════════════════════════════════════════════
 //  UPDATE PROFILE
 // ════════════════════════════════════════════════════════
 if ($action === 'update' && $method === 'POST') {
-   $uid   = requireAuth();
-   $name  = trim($body['full_name'] ?? '');
-   $dob   = trim($body['dob']       ?? '');
-   if (!$name) respond(false, 'Name cannot be empty.');
-   $db     = getDB();
-   $dobVal = $dob ?: null;
-   $stmt   = $db->prepare('UPDATE users SET full_name=?, dob=? WHERE id=?');
-   $stmt->bind_param('ssi', $name, $dobVal, $uid);
-   if ($stmt->execute()) {
-       $_SESSION['user_name'] = $name;
-       respond(true, 'Profile updated!');
-   }
-   respond(false, 'Update failed.');
+    $uid = requireAuth();
+    $name = trim($body['full_name'] ?? '');
+    $email = strtolower(trim($body['email'] ?? ''));
+    $capacity = (int)($body['daily_capacity'] ?? 4);
+    
+    if (!$name || !$email) respond(false, 'Name and Email are required.');
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) respond(false, 'Invalid email format.');
+
+    $db = getDB();
+    $stmt = $db->prepare('UPDATE users SET full_name=?, email=?, daily_capacity=? WHERE id=?');
+    $stmt->bind_param('ssii', $name, $email, $capacity, $uid);
+    
+    if ($stmt->execute()) {
+        $_SESSION['user_name'] = $name;
+        respond(true, 'Profile updated successfully!');
+    }
+    respond(false, 'Update failed.');
+}
+    
+// ════════════════════════════════════════════════════════
+//  CHANGE PASSWORD
+// ════════════════════════════════════════════════════════
+if ($action === 'change_password' && $method === 'POST') {
+    $uid = requireAuth();
+    $current = $body['current_password'] ?? '';
+    $new = $body['new_password'] ?? '';
+
+    if (strlen($new) < 8) respond(false, 'New password must be at least 8 characters.');
+
+    $db = getDB();
+    $stmt = $db->prepare('SELECT password_hash FROM users WHERE id = ?');
+    $stmt->bind_param('i', $uid);
+    $stmt->execute();
+    $user = $stmt->get_result()->fetch_assoc();
+
+    if (!password_verify($current, $user['password_hash'])) {
+        respond(false, 'Current password incorrect.');
+    }
+
+    $newHash = password_hash($new, PASSWORD_BCRYPT);
+    $upd = $db->prepare('UPDATE users SET password_hash = ? WHERE id = ?');
+    $upd->bind_param('si', $newHash, $uid);
+    
+    if ($upd->execute()) respond(true, 'Password changed successfully!');
+    respond(false, 'Failed to change password.');
 }
 // ════════════════════════════════════════════════════════
 //  DELETE ACCOUNT

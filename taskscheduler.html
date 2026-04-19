@@ -95,6 +95,19 @@
                     <i class="fas fa-home"></i> <span>Home</span>
                 </button>
 
+                <p class="px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 pt-4">Schedule View</p>
+                <div class="p-1 bg-slate-100 dark:bg-white/5 rounded-2xl flex flex-col gap-1">
+                    <button onclick="window.location.href='dashboard.html'" class="flex items-center gap-3 px-4 py-2 rounded-xl text-xs font-bold transition-all text-slate-500 hover:text-sync">
+                        <i class="fas fa-list"></i> Day Timeline
+                    </button>                    
+                    <button onclick="window.location.href='dashboard.html'"  class="flex items-center gap-3 px-4 py-2 rounded-xl text-xs font-bold transition-all text-slate-500 hover:text-sync">
+                        <i class="fas fa-calendar-week"></i> Week View
+                    </button>
+                    <button onclick="window.location.href='dashboard.html'" class="flex items-center gap-3 px-4 py-2 rounded-xl text-xs font-bold transition-all text-slate-500 hover:text-sync">
+                        <i class="fas fa-th-large"></i> Month Grid
+                    </button>
+                </div>
+
                 <p class="px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 pt-4">Actions</p>
                 <button onclick="toggleModal('taskModal')" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-500 hover:text-sync hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
                     <i class="fas fa-plus-circle"></i> <span>Add New Task</span>
@@ -109,6 +122,9 @@
                 </button>
                 <button onclick="window.location.href='notes.html'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-500 hover:text-sync transition-all">
                     <i class="fas fa-sticky-note"></i> <span>My Notes</span>
+                </button>
+                <button onclick="window.location.href='profile.html'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-500 hover:text-sync transition-all">
+                    <i class="fas fa-user"></i> <span>Profile</span>
                 </button>
 
                 <div class="pt-6">
@@ -139,7 +155,7 @@
                         <i class="fas fa-sort-amount-down text-slate-400 text-xs"></i>
                         <select id="sortSelect" onchange="processAndRender()" class="bg-transparent text-xs font-bold outline-none cursor-pointer text-slate-600 dark:text-slate-300">
                             <option value="newest">Newest Created</option>
-                            <option value="date">Deadline (Nearest)</option>
+                            <option value="date">Schedule Date (Nearest)</option>
                             <option value="priority">Priority (High-Low)</option>
                             <option value="subject">Subject (A-Z)</option>
                         </select>
@@ -172,24 +188,58 @@
     <div id="editModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
         <div class="bg-white dark:bg-[#0b1120] p-8 rounded-[2rem] w-full max-w-lg shadow-2xl relative">
             <button onclick="toggleModal('editModal')" class="absolute top-6 right-6 text-slate-400"><i class="fas fa-times"></i></button>
-            <h3 class="text-2xl font-black mb-6">Edit Task</h3>
+            <h3 class="text-2xl font-black mb-6 tracking-tight">Edit Task Details</h3>
+            
             <form id="editForm" class="space-y-4">
                 <input type="hidden" id="editTaskId">
                 <div class="grid grid-cols-2 gap-4">
-                    <input id="editTaskSubject" type="text" placeholder="Subject" class="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-2xl outline-none">
-                    <input id="editTaskTitle" type="text" placeholder="Task Name" required class="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-2xl outline-none">
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-400">Subject</label>
+                        <input id="editTaskSubject" type="text" class="w-full p-3 bg-slate-50 dark:bg-white/5 rounded-xl outline-none border border-slate-200 dark:border-slate-700">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-400">Task Name</label>
+                        <input id="editTaskTitle" type="text" required class="w-full p-3 bg-slate-50 dark:bg-white/5 rounded-xl outline-none border border-slate-200 dark:border-slate-700">
+                    </div>
                 </div>
-                <textarea id="editTaskDesc" placeholder="Description" class="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-2xl outline-none" rows="2"></textarea>
+                <div>
+                    <label class="block text-[10px] font-black uppercase text-slate-400">Task Theme Color</label>
+                    <input id="editTaskColor" type="color" class="w-full h-10 bg-transparent cursor-pointer rounded-xl border-0">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black uppercase text-slate-400">Description</label>
+                    <textarea id="editTaskDesc" class="w-full p-3 bg-slate-50 dark:bg-white/5 rounded-xl outline-none border border-slate-200 dark:border-slate-700 resize-none" rows="2"></textarea>
+                </div>
                 <div class="grid grid-cols-3 gap-4">
-                    <select id="editTaskPriority" class="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-2xl outline-none">
-                        <option value="High">High</option>
-                        <option value="Medium">Medium</option>
-                        <option value="Low">Low</option>
-                    </select>
-                    <input id="editTaskDate" type="date" class="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-2xl outline-none">
-                    <input id="editTaskTime" type="time" class="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-2xl outline-none">
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-400">Priority</label>
+                        <select id="editTaskPriority" class="w-full p-3 bg-slate-50 dark:bg-white/5 rounded-xl outline-none border border-slate-200 dark:border-slate-700">
+                            <option value="High">High</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Low">Low</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-400">Est. Mins</label>
+                        <input id="editTaskEstTime" type="number" class="w-full p-3 bg-slate-50 dark:bg-white/5 rounded-xl outline-none border border-slate-200 dark:border-slate-700">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-400">Schedule Date</label>
+                        <input id="editTaskDate" type="date" class="w-full p-3 bg-slate-50 dark:bg-white/5 rounded-xl outline-none border border-slate-200 dark:border-slate-700">
+                    </div>
                 </div>
-                <button type="submit" class="w-full py-4 bg-sync text-white rounded-2xl font-black shadow-lg">UPDATE TASK</button>
+                <div class="flex items-center justify-between gap-4">
+                    <div class="flex-1">
+                        <label class="block text-[10px] font-black uppercase text-slate-400">Schedule Time</label>
+                        <input id="editTaskClockTime" type="time" value="00:00:00" class="w-full p-3 bg-slate-50 dark:bg-white/5 rounded-xl outline-none border border-slate-200 dark:border-slate-700">
+                    </div>
+                    <div class="flex gap-3 pt-4">
+                        <label class="text-[9px] font-bold uppercase"><input type="checkbox" id="editTaskUrgent"> Urgent</label>
+                        <label class="text-[9px] font-bold uppercase"><input type="checkbox" id="editTaskImportant"> Important</label>
+                        <label class="text-[9px] font-bold uppercase"><input type="checkbox" id="editTaskReminder"> Remind</label>
+                    </div>
+                </div>
+                <button type="submit" class="w-full py-4 bg-sync text-white rounded-2xl font-black shadow-lg">SAVE CHANGES</button>
             </form>
         </div>
     </div>
@@ -235,16 +285,16 @@
                         <input id="taskEstTime" type="number" value="60" class="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl outline-none border border-slate-200 dark:border-slate-700">
                     </div>
                     <div>
-                        <label class="block text-[10px] font-black uppercase text-slate-400">Deadline</label>
-                        <input id="taskDate" type="date" required class="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl outline-none border border-slate-200 dark:border-slate-700">
+                        <label class="block text-[10px] font-black uppercase text-slate-400">Schedule Date</label>
+                        <input id="taskDate" type="date" class="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl outline-none border border-slate-200 dark:border-slate-700">
                     </div>
                 </div>
 
                 <!-- Row 4: Clock Time (Added) & Checkboxes -->
                 <div class="flex items-center justify-between gap-4">
                     <div class="flex-1">
-                        <label class="block text-[10px] font-black uppercase text-slate-400">Start Time</label>
-                        <input id="taskClockTime" type="time" class="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl outline-none border border-slate-200 dark:border-slate-700">
+                        <label class="block text-[10px] font-black uppercase text-slate-400">Schedule Time</label>
+                        <input id="taskClockTime" type="time" value="00:00:00" class="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl outline-none border border-slate-200 dark:border-slate-700">
                     </div>
                     <div class="flex items-center gap-4 pt-4">
                         <label class="flex items-center gap-1 text-[10px] font-bold"><input type="checkbox" id="taskUrgent"> URGENT</label>
@@ -396,14 +446,52 @@
             }
         }
 
+        
+        document.getElementById('taskForm').onsubmit = async (e) => {
+            e.preventDefault();
+
+            const data = {
+                title: document.getElementById('taskTitle').value,
+                subject: document.getElementById('taskSubject').value || 'General',
+                description: document.getElementById('taskDesc').value || '',
+                category: document.getElementById('taskTitle').value || 'General', // Using Subject as Category for color mapping
+                priority: document.getElementById('taskPriority').value,
+                task_date: document.getElementById('taskDate').value,
+                task_time: document.getElementById('taskClockTime').value || '00:00:00',
+                estimated_time: parseInt(document.getElementById('taskEstTime').value) || 60,
+                is_urgent: document.getElementById('taskUrgent').checked ? 1 : 0,
+                is_important: document.getElementById('taskImportant').checked ? 1 : 0,
+                reminder: document.getElementById('taskReminder').checked ? 1 : 0,
+                color: document.getElementById('taskColor').value
+            };
+
+            const res = await API.createTask(data);
+            if(res.success) {
+                showToast("Task Created!");
+                toggleModal('taskModal');
+                await fetchTasks();
+                e.target.reset();
+            } else {
+                showToast(res.message, "error");
+            }
+        };
+
         function openEditModal(task) {
             document.getElementById('editTaskId').value = task.id;
-            document.getElementById('editTaskTitle').value = task.title;
             document.getElementById('editTaskSubject').value = task.subject;
-            document.getElementById('editTaskDesc').value = task.description;
+            document.getElementById('editTaskTitle').value = task.title;
+            document.getElementById('editTaskColor').value = task.color || '#00B4BE';
+            document.getElementById('editTaskDesc').value = task.description || '';
             document.getElementById('editTaskPriority').value = task.priority;
-            document.getElementById('editTaskDate').value = task.task_date;
-            document.getElementById('editTaskTime').value = task.task_time;
+            document.getElementById('editTaskEstTime').value = task.estimated_time;
+            document.getElementById('editTaskDate').value = task.task_date === '0000-00-00' ? '' : task.task_date;
+            document.getElementById('editTaskClockTime').value = task.task_time;
+            
+            // Checkboxes logic (checking against 1 or '1')
+            document.getElementById('editTaskUrgent').checked = parseInt(task.is_urgent) === 1;
+            document.getElementById('editTaskImportant').checked = parseInt(task.is_important) === 1;
+            document.getElementById('editTaskReminder').checked = parseInt(task.reminder) === 1;
+
             toggleModal('editModal');
         }
 
@@ -415,14 +503,20 @@
                 subject: document.getElementById('editTaskSubject').value,
                 description: document.getElementById('editTaskDesc').value,
                 priority: document.getElementById('editTaskPriority').value,
-                task_date: document.getElementById('editTaskDate').value,
-                task_time: document.getElementById('editTaskTime').value
+                task_date: document.getElementById('editTaskDate').value || null, // Allow null
+                task_time: document.getElementById('editTaskClockTime').value || '00:00:00',
+                estimated_time: document.getElementById('editTaskEstTime').value,
+                color: document.getElementById('editTaskColor').value,
+                is_urgent: document.getElementById('editTaskUrgent').checked ? 1 : 0,
+                is_important: document.getElementById('editTaskImportant').checked ? 1 : 0,
+                reminder: document.getElementById('editTaskReminder').checked ? 1 : 0
             };
+            
             const res = await API.updateTask(data);
             if(res.success) {
                 showToast("Task Updated!");
                 toggleModal('editModal');
-                fetchTasks();
+                fetchTasks(); 
             }
         };
 
