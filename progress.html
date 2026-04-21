@@ -8,6 +8,7 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="js/api.js"></script>
+    <script src="js/reminder.js"></script>
 
     <script>
         tailwind.config = {
@@ -72,6 +73,28 @@
         </div>
 
         <div class="flex items-center gap-4">
+            <!-- NOTIFICATION BELL -->
+            <div class="relative">
+                <button onclick="toggleReminderDropdown()" class="p-2 w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 transition flex items-center justify-center relative hover:text-sync">
+                    <i class="fas fa-bell text-sm text-slate-400"></i>
+                    <!-- Fixed ID: matching the script -->
+                    <span id="active-reminder-dot" class="hidden absolute top-2 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white dark:border-[#0b1120]"></span>
+                </button>
+                
+                <!-- DROPDOWN -->
+                <div id="reminder-dropdown" class="hidden absolute right-0 mt-3 w-72 bg-white dark:bg-[#0b1120] rounded-[1.5rem] shadow-2xl border border-slate-100 dark:border-white/5 z-[100] overflow-hidden" onclick="event.stopPropagation()">
+                    <div class="p-4 border-b dark:border-white/5 bg-slate-50/50 dark:bg-white/5 flex justify-between items-center">
+                        <h4 class="text-[10px] font-black uppercase tracking-widest text-slate-400">Upcoming Alerts</h4>
+                        
+                        <button onclick="toggleReminderSound()" id="sound-toggle-btn" class="text-slate-400 hover:text-sync transition">
+                            <i class="fas fa-volume-up text-xs"></i>
+                        </button>
+                    </div>
+                    <div id="reminder-list" class="max-h-80 overflow-y-auto main-scrollbar p-2 space-y-2">
+                        <p class="text-center py-8 text-[10px] text-slate-400 italic">No tasks with reminders for today.</p>
+                    </div>
+                </div>
+            </div>
             <button onclick="toggleDarkMode()" class="p-2 w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 transition flex items-center justify-center">
                 <i class="fas fa-moon dark:hidden"></i>
                 <i class="fas fa-sun hidden dark:block text-amber-400"></i>
@@ -112,12 +135,12 @@
                 <button onclick="toggleModal('taskModal')" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-500 hover:text-sync hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
                     <i class="fas fa-plus-circle"></i> <span>Add New Task</span>
                 </button>
-                <button onclick="window.location.href='taskscheduler.html'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold bg-sync/10 text-sync">
+                <button onclick="window.location.href='taskscheduler.html'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-500 hover:text-sync transition-all">
                     <i class="fas fa-tasks"></i> <span>Task Scheduler</span>
                 </button>
 
                 <p class="px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 pt-4">Insights</p>
-                <button onclick="window.location.href='progress.html'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-500 hover:text-sync transition-all">
+                <button onclick="window.location.href='progress.html'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold bg-sync/10 text-sync">
                     <i class="fas fa-chart-pie"></i> <span>Progress</span>
                 </button>
                 <button onclick="window.location.href='notes.html'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-500 hover:text-sync transition-all">
@@ -137,29 +160,29 @@
 
         <!-- MAIN CONTENT AREA -->
         <main class="flex-1 overflow-y-auto main-scrollbar p-6 lg:p-10 bg-slate-50 dark:bg-[#020617]">
-            <div class="max-w-6xl mx-auto space-y-8">
+            <div class="max-w-7xl mx-auto space-y-8 pb-10">
                 
                 <!-- Page Header -->
                 <div class="px-2">
                     <h2 class="text-4xl font-black tracking-tight text-slate-900 dark:text-white">Performance <span class="text-sync">Insights</span></h2>
-                    <p class="text-slate-500 dark:text-slate-400 mt-2 font-medium">Tracking your task efficiency and consistency streaks.</p>
+                    <p class="text-slate-500 dark:text-slate-400 mt-2 font-medium">Analyzing your study speed, dedication, and consistency streaks.</p>
                 </div>
 
-                <!-- Stats Grid (Top Row) -->
+                <!-- ROW 1: CORE TASK STATS -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div class="bg-white dark:bg-[#0b1120] p-8 rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-sm">
+                    <div class="bg-white dark:bg-[#0b1120] p-6 rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-sm">
                         <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Tasks</p>
                         <p id="total-tasks" class="text-4xl font-black mt-2">0</p>
                     </div>
-                    <div class="bg-white dark:bg-[#0b1120] p-8 rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-sm">
+                    <div class="bg-white dark:bg-[#0b1120] p-6 rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-sm">
                         <p class="text-[10px] font-black text-amber-500 uppercase tracking-widest">Pending</p>
                         <p id="pending-tasks" class="text-4xl font-black mt-2">0</p>
                     </div>
-                    <div class="bg-white dark:bg-[#0b1120] p-8 rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-sm">
+                    <div class="bg-white dark:bg-[#0b1120] p-6 rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-sm">
                         <p class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Completed</p>
                         <p id="completed-tasks" class="text-4xl font-black mt-2">0</p>
                     </div>
-                    <div class="bg-study p-8 rounded-[2rem] shadow-xl shadow-study/20 text-white relative overflow-hidden">
+                    <div class="bg-study p-6 rounded-[2rem] shadow-xl shadow-study/20 text-white relative overflow-hidden">
                         <div class="relative z-10">
                             <p class="text-[10px] font-black uppercase tracking-widest opacity-80">Current Streak</p>
                             <p id="current-streak" class="text-4xl font-black mt-2">0 Days</p>
@@ -168,166 +191,309 @@
                     </div>
                 </div>
 
-                <!-- Analysis Grid (Bottom Row) -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- ROW 2: PRODUCTIVITY METRICS (New) -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white dark:bg-[#0b1120] p-6 rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm flex items-center gap-5">
+                        <div class="w-14 h-14 rounded-2xl bg-sync/10 text-sync flex items-center justify-center text-xl">
+                            <i class="fas fa-medal"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-black text-slate-400 uppercase">Dedication Score</p>
+                            <p id="dedication-score" class="text-2xl font-black text-sync">0%</p>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-[#0b1120] p-6 rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm flex items-center gap-5">
+                        <div class="w-14 h-14 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center text-xl">
+                            <i class="fas fa-tachometer-alt"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-black text-slate-400 uppercase">Focus Speed</p>
+                            <p id="focus-speed" class="text-2xl font-black text-emerald-500">0.0x</p>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-[#0b1120] p-6 rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm flex items-center gap-5">
+                        <div class="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center text-xl">
+                            <i class="fas fa-hourglass-half"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-black text-slate-400 uppercase">Total Effort</p>
+                            <p id="total-hours" class="text-2xl font-black text-amber-500">0h</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ROW 3: DEEP ANALYSIS -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     
-                    <!-- Weekly Flow (Bar Chart) -->
-                    <div class="bg-white dark:bg-[#0b1120] p-8 rounded-[2.5rem] border border-slate-100 dark:border-white/5 shadow-sm">
+                    <!-- Weekly Flow -->
+                    <div class="lg:col-span-2 bg-white dark:bg-[#0b1120] p-8 rounded-[2.5rem] border border-slate-100 dark:border-white/5 shadow-sm">
                         <div class="flex items-center justify-between mb-8">
                             <h3 class="text-lg font-black tracking-tight">Weekly Flow</h3>
-                            <span id="week-range" class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Loading...</span>
+                            <span id="week-range" class="text-[10px] font-black text-slate-400 uppercase">Loading...</span>
                         </div>
-                        
-                        <div class="flex items-end justify-between h-48 px-2 gap-2" id="bar-container">
-                            <!-- Bars injected via JS -->
-                            <div class="flex-1 flex flex-col items-center gap-3 group">
-                                <div class="w-full bg-slate-50 dark:bg-white/5 rounded-full relative h-32 overflow-hidden">
-                                    <div class="absolute bottom-0 w-full bg-sync/20 group-hover:bg-sync transition-all" style="height: 0%"></div>
-                                </div>
-                                <span class="text-[10px] font-bold text-slate-400">MON</span>
-                            </div>
-                            <!-- ... Repeat for 7 days ... -->
-                        </div>
+                        <div class="flex items-end justify-between h-48 px-2 gap-3" id="bar-container"></div>
                     </div>
 
-                    <!-- Monthly Target (Circular & Linear Progress) -->
-                    <div class="bg-white dark:bg-[#0b1120] p-8 rounded-[2.5rem] border border-slate-100 dark:border-white/5 shadow-sm">
-                        <h3 class="text-lg font-black tracking-tight mb-8">Monthly Target</h3>
-                        
-                        <div class="flex flex-col md:flex-row items-center gap-10">
-                            <!-- Circular Gauge -->
-                            <div class="relative w-40 h-40">
-                                <svg class="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                                    <circle class="text-slate-100 dark:text-white/5" stroke-width="8" stroke="currentColor" fill="transparent" r="40" cx="50" cy="50"/>
-                                    <circle class="text-sync transition-all duration-1000" id="circle-progress" stroke-width="8" stroke-dasharray="251.2" stroke-dashoffset="251.2" stroke-linecap="round" stroke="currentColor" fill="transparent" r="40" cx="50" cy="50"/>
-                                </svg>
-                                <div class="absolute inset-0 flex flex-col items-center justify-center">
-                                    <span id="percent-text" class="text-3xl font-black">0%</span>
-                                    <span class="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Goal</span>
-                                </div>
+                    <!-- Monthly Target -->
+                    <div class="bg-white dark:bg-[#0b1120] p-8 rounded-[2.5rem] border border-slate-100 dark:border-white/5 shadow-sm flex flex-col items-center justify-center">
+                        <h3 class="text-lg font-black tracking-tight mb-8 self-start">Monthly Target</h3>
+                        <div class="relative w-44 h-44">
+                            <svg class="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                                <circle class="text-slate-100 dark:text-white/5" stroke-width="8" stroke="currentColor" fill="transparent" r="40" cx="50" cy="50"/>
+                                <circle class="text-sync transition-all duration-1000" id="circle-progress" stroke-width="8" stroke-dasharray="251.2" stroke-dashoffset="251.2" stroke-linecap="round" stroke="currentColor" fill="transparent" r="40" cx="50" cy="50"/>
+                            </svg>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                <span id="percent-text" class="text-3xl font-black">0%</span>
+                                <span class="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Goal</span>
                             </div>
-
-                            <!-- Linear Breakdown -->
-                            <div class="flex-1 w-full space-y-6">
-                                <div>
-                                    <div class="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
-                                        <span id="month-label">Month Completion</span>
-                                        <span id="month-ratio">0/0</span>
-                                    </div>
-                                    <div class="h-3 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
-                                        <div id="linear-progress" class="h-full bg-sync transition-all duration-1000" style="width: 0%"></div>
-                                    </div>
-                                </div>
-                                <p class="text-xs text-slate-500 leading-relaxed">
-                                    You're <span id="ahead-text" class="text-sync font-bold">doing great!</span> Keep completing tasks to maintain your academic momentum.
-                                </p>
+                        </div>
+                        <div class="w-full mt-8 space-y-2">
+                            <div class="flex justify-between text-[10px] font-black uppercase text-slate-400">
+                                <span id="month-label">Completion</span>
+                                <span id="month-ratio">0/0</span>
+                            </div>
+                            <div class="h-2 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
+                                <div id="linear-progress" class="h-full bg-sync transition-all duration-1000" style="width: 0%"></div>
                             </div>
                         </div>
                     </div>
 
+                    <!-- Subject Comparison (New) -->
+                    <div class="lg:col-span-3 bg-white dark:bg-[#0b1120] p-8 rounded-[2.5rem] border border-slate-100 dark:border-white/5 shadow-sm">
+                        <h3 class="text-lg font-black tracking-tight mb-6">Subject Comparison <span class="text-xs font-medium text-slate-400 ml-2">(Estimated vs. Actual Speed)</span></h3>
+                        <div id="comparison-list" class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+                            <p class="text-slate-400 italic text-sm">Waiting for more completed data...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- XP & LEVEL CARD -->
+                <div class="bg-white dark:bg-[#0b1120] p-6 rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-xl flex flex-col md:flex-row items-center gap-6 mb-8">
+                    <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-study to-sync flex flex-col items-center justify-center text-white shadow-lg">
+                        <span class="text-[10px] font-black uppercase opacity-70">Level</span>
+                        <span id="user-level" class="text-3xl font-black">1</span>
+                    </div>
+                    <div class="flex-1 w-full">
+                        <div class="flex justify-between mb-2">
+                            <span class="text-sm font-black tracking-tight">Experience Points (XP)</span>
+                            <span id="user-xp-display" class="text-sm font-bold text-sync">0 / 1000</span>
+                        </div>
+                        <div class="h-4 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
+                            <div id="xp-bar" class="h-full bg-gradient-to-r from-study to-sync transition-all duration-1000" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>                    
+                <!-- LEADERBOARD SECTION -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Existing charts go in col-span-2 -->
+                    <div class="lg:col-span-2 space-y-8"> 
+                        <!-- Your existing Weekly Flow and Subject Comparison here -->
+                    </div>
+
+                    <!-- LEADERBOARD (Col 3) -->
+                    <div class="space-y-6">
+                        <div class="bg-white dark:bg-[#0b1120] p-8 rounded-[2.5rem] border border-slate-100 dark:border-white/5 shadow-sm">
+                            <h3 class="text-lg font-black mb-6 flex items-center gap-2">
+                                <i class="fas fa-trophy text-amber-500"></i> Leaderboard
+                            </h3>
+                            <div id="leaderboard-list" class="space-y-4">
+                                <!-- Players injected here -->
+                            </div>
+                            
+                            <!-- ADD FRIEND -->
+                            <div class="mt-8 pt-6 border-t dark:border-white/5">
+                                <p class="text-[10px] font-black text-slate-400 uppercase mb-3">Add Study Partner</p>
+                                <div class="flex gap-2">
+                                    <input id="friend-search" type="text" placeholder="Email or ID" class="flex-1 p-3 bg-slate-50 dark:bg-white/5 rounded-xl text-xs outline-none border border-transparent focus:border-sync transition">
+                                    <button onclick="addFriend()" class="p-3 bg-sync text-white rounded-xl hover:scale-105 transition"><i class="fas fa-user-plus"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
-    </div>
 
-    <script>
-        async function initScheduler(user) {
-            populateSidebar(user);
-            await fetchAndRenderAnalytics();
-        }
-
-        async function fetchAndRenderAnalytics() {
-            const statsRes = await API.getStats();
-            const tasksRes = await API.getTasks();
-
-            if (statsRes.success && tasksRes.success) {
-                renderTopCards(statsRes.data);
-                renderWeeklyFlow(tasksRes.data);
-                renderMonthlyTarget(tasksRes.data);
+        <script>
+            async function initScheduler(user) {
+                populateSidebar(user);
+                await fetchAndRenderAnalytics();
+                await renderGamification(user);
             }
-        }
 
-        function renderTopCards(data) {
-            document.getElementById('total-tasks').innerText = data.total || 0;
-            document.getElementById('pending-tasks').innerText = data.pending || 0;
-            document.getElementById('completed-tasks').innerText = data.completed || 0;
-            document.getElementById('current-streak').innerText = `${data.streak || 0} Days`;
-        }
+            async function fetchAndRenderAnalytics() {
+                const statsRes = await API.getStats();
+                const tasksRes = await API.getTasks();
 
-        function renderWeeklyFlow(tasks) {
-            const container = document.getElementById('bar-container');
-            const rangeLabel = document.getElementById('week-range');
-            
-            // Get last 7 days
-            const days = [];
-            const counts = [];
-            for (let i = 6; i >= 0; i--) {
-                const d = new Date();
-                d.setDate(d.getDate() - i);
-                days.push(d);
+                if (statsRes.success && tasksRes.success) {
+                    const tasks = tasksRes.data;
+                    const completedTasks = tasks.filter(t => t.status === 'completed');
+
+                    // 1. RENDER BASIC CARDS
+                    renderTopCards(statsRes.data);
+
+                    // 2. CALCULATE SPEED & DEDICATION
+                    let totalEst = 0;
+                    let totalSpent = 0;
+                    
+                    completedTasks.forEach(t => {
+                        totalEst += parseInt(t.estimated_time || 0);
+                        totalSpent += parseInt(t.time_spent_mins || 0);
+                    });
+
+                    const speed = totalSpent > 0 ? (totalEst / totalSpent).toFixed(1) : "1.0";
+                    const dedication = tasks.length > 0 ? Math.round((completedTasks.length / tasks.length) * 100) : 0;
+                    
+                    document.getElementById('dedication-score').innerText = `${dedication}%`;
+                    document.getElementById('focus-speed').innerText = `${speed}x`;
+                    document.getElementById('total-hours').innerText = `${Math.round(totalSpent/60)}h`;
+
+                    // 3. RENDER CHARTS
+                    renderWeeklyFlow(tasks);
+                    renderMonthlyTarget(tasks, dedication);
+                    renderSubjectComparison(tasks);
+                }
+            }
+
+            function renderTopCards(data) {
+                document.getElementById('total-tasks').innerText = data.total || 0;
+                document.getElementById('pending-tasks').innerText = data.pending || 0;
+                document.getElementById('completed-tasks').innerText = data.completed || 0;
+                document.getElementById('current-streak').innerText = `${data.streak || 0} Days`;
+            }
+
+            function renderWeeklyFlow(tasks) {
+                const container = document.getElementById('bar-container');
+                const rangeLabel = document.getElementById('week-range');
+                const days = [];
+                const counts = [];
                 
-                const dateStr = d.toISOString().split('T')[0];
-                const count = tasks.filter(t => t.task_date === dateStr && t.status === 'completed').length;
-                counts.push(count);
+                for (let i = 6; i >= 0; i--) {
+                    const d = new Date();
+                    d.setDate(d.getDate() - i);
+                    days.push(d);
+                    const dateStr = d.toISOString().split('T')[0];
+                    const count = tasks.filter(t => t.task_date === dateStr && t.status === 'completed').length;
+                    counts.push(count);
+                }
+
+                rangeLabel.innerText = `${days[0].toLocaleDateString('en-US', {month:'short', day:'numeric'})} - ${days[6].toLocaleDateString('en-US', {month:'short', day:'numeric'})}`;
+                const max = Math.max(...counts, 1);
+                
+                container.innerHTML = days.map((day, idx) => {
+                    const pct = (counts[idx] / max) * 100;
+                    return `
+                        <div class="flex-1 flex flex-col items-center gap-3 group h-full justify-end">
+                            <div class="w-full bg-slate-50 dark:bg-white/5 rounded-t-2xl relative flex-1 overflow-hidden">
+                                <div class="absolute bottom-0 w-full bg-sync/20 group-hover:bg-sync transition-all duration-700" style="height: ${pct}%"></div>
+                            </div>
+                            <span class="text-[9px] font-black text-slate-400 uppercase">${day.toLocaleDateString('en-US', {weekday:'short'})}</span>
+                        </div>`;
+                }).join('');
             }
 
-            rangeLabel.innerText = `${days[0].toLocaleDateString('en-US', {month:'short', day:'numeric'})} - ${days[6].toLocaleDateString('en-US', {month:'short', day:'numeric'})}`;
+            function renderMonthlyTarget(tasks, dedication) {
+                const now = new Date();
+                const monthTasks = tasks.filter(t => new Date(t.task_date).getMonth() === now.getMonth());
+                const completed = monthTasks.filter(t => t.status === 'completed').length;
+                const total = monthTasks.length || 1;
 
-            const max = Math.max(...counts, 1);
-            
-            container.innerHTML = days.map((day, index) => {
-                const pct = (counts[index] / max) * 100;
-                return `
-                    <div class="flex-1 flex flex-col items-center gap-3 group h-full justify-end">
-                        <div class="w-full bg-slate-50 dark:bg-white/5 rounded-t-2xl relative flex-1 overflow-hidden">
-                            <div class="absolute bottom-0 w-full bg-sync/20 group-hover:bg-sync transition-all duration-700" style="height: ${pct}%"></div>
+                document.getElementById('month-label').innerText = now.toLocaleString('default', { month: 'long' }) + " Completion";
+                document.getElementById('month-ratio').innerText = `${completed}/${total}`;
+                document.getElementById('percent-text').innerText = `${dedication}%`;
+                document.getElementById('linear-progress').style.width = `${dedication}%`;
+
+                const circle = document.getElementById('circle-progress');
+                const circumference = 251.2;
+                circle.style.strokeDashoffset = circumference - (dedication / 100) * circumference;
+            }
+
+            function renderSubjectComparison(tasks) {
+                const container = document.getElementById('comparison-list');
+                const completed = tasks.filter(t => t.status === 'completed');
+                const subjects = {};
+
+                completed.forEach(t => {
+                    if (!subjects[t.subject]) subjects[t.subject] = { est: 0, spent: 0, color: t.color };
+                    subjects[t.subject].est += parseInt(t.estimated_time || 0);
+                    subjects[t.subject].spent += parseInt(t.time_spent_mins || 0);
+                });
+
+                if (Object.keys(subjects).length === 0) return;
+
+                container.innerHTML = Object.keys(subjects).map(s => {
+                    const data = subjects[s];
+                    const efficiency = Math.min(Math.round((data.est / (data.spent || 1)) * 100), 100);
+                    return `
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-end">
+                                <span class="text-xs font-bold dark:text-white">${s} <span class="text-[10px] text-slate-400 font-normal ml-2">${data.spent}m total</span></span>
+                                <span class="text-[10px] font-black ${efficiency > 70 ? 'text-emerald-500' : 'text-amber-500'} uppercase">${efficiency}% SPEED</span>
+                            </div>
+                            <div class="h-2 w-full bg-slate-50 dark:bg-white/5 rounded-full overflow-hidden">
+                                <div class="h-full transition-all duration-1000" style="width: ${efficiency}%; background: ${data.color}"></div>
+                            </div>
+                        </div>`;
+                }).join('');
+            }
+
+            // Add to your fetchAndRenderAnalytics function
+            async function renderGamification(user) {
+                // 1. Update Personal XP UI
+                const currentXP = user.xp || 0;
+                const level = user.level || 1;
+                const xpInLevel = currentXP % 1000;
+                const progressPct = (xpInLevel / 1000) * 100;
+
+                document.getElementById('user-level').innerText = level;
+                document.getElementById('user-xp-display').innerText = `${xpInLevel} / 1000 XP`;
+                document.getElementById('xp-bar').style.width = `${progressPct}%`;
+
+                // 2. Fetch Leaderboard
+                const res = await _req(`${_base}/social.php?action=leaderboard`);
+                if (res.success) {
+                    const list = document.getElementById('leaderboard-list');
+                    list.innerHTML = res.data.map((player, idx) => `
+                        <div class="flex items-center gap-4 p-3 rounded-2xl ${player.id == user.id ? 'bg-sync/10 border border-sync/20' : ''}">
+                            <span class="text-xs font-black text-slate-400 w-4">${idx + 1}</span>
+                            <div class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-white/5 flex items-center justify-center font-bold text-xs">
+                                ${player.full_name.charAt(0)}
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-xs font-bold truncate">${player.full_name} ${player.id == user.id ? '(You)' : ''}</p>
+                                <p class="text-[10px] text-slate-400 uppercase font-bold">Lvl ${player.level}</p>
+                            </div>
+                            <span class="text-xs font-black text-sync">${player.xp}</span>
                         </div>
-                        <span class="text-[9px] font-black text-slate-400 uppercase">${day.toLocaleDateString('en-US', {weekday:'short'})}</span>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function renderMonthlyTarget(tasks) {
-            const now = new Date();
-            const currentMonth = now.getMonth();
-            const currentYear = now.getFullYear();
-            
-            const monthTasks = tasks.filter(t => {
-                const d = new Date(t.task_date);
-                return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-            });
-
-            const completed = monthTasks.filter(t => t.status === 'completed').length;
-            const total = monthTasks.length || 1;
-            const percent = Math.round((completed / total) * 100);
-
-            // Update Labels
-            document.getElementById('month-label').innerText = now.toLocaleString('default', { month: 'long' }) + " Completion";
-            document.getElementById('month-ratio').innerText = `${completed}/${total}`;
-            document.getElementById('percent-text').innerText = `${percent}%`;
-
-            // Update Linear Bar
-            document.getElementById('linear-progress').style.width = `${percent}%`;
-
-            // Update Circular Gauge
-            const circle = document.getElementById('circle-progress');
-            const circumference = 2 * Math.PI * 40; // 251.2
-            const offset = circumference - (percent / 100) * circumference;
-            circle.style.strokeDashoffset = offset;
-
-            // Ahead text logic
-            if (percent > 50) {
-                document.getElementById('ahead-text').innerText = "ahead of schedule";
+                    `).join('');
+                }
             }
-        }
 
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('hidden'); }
-        function toggleDarkMode() {
-            const isDark = document.documentElement.classList.toggle('dark');
-            localStorage.setItem('theme', isDark ? 'dark' : 'light');
-        }
-        async function handleLogout() { await API.logout(); window.location.href = "index.html"; }
-    </script>
+            async function addFriend() {
+                const search = document.getElementById('friend-search').value;
+                if(!search) return;
+                
+                const res = await API.addFriend(search);
+                
+                if(res.success) {
+                    showToast("Study partner added!");
+                    input.value = '';
+                    // Refresh the leaderboard visually without reloading the whole page
+                    const user = await API.getMe(); 
+                    renderGamification(user.data); 
+                    location.reload(); // Refresh leaderboard
+                } else {
+                    showToast(res.message, "error");
+                }
+            }
+
+
+            function toggleSidebar() { document.getElementById('sidebar').classList.toggle('hidden'); }
+            function toggleDarkMode() {
+                const isDark = document.documentElement.classList.toggle('dark');
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            }
+            async function handleLogout() { await API.logout(); window.location.href = "index.html"; }
+        </script>
 </body>
 </html>

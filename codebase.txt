@@ -1,0 +1,185 @@
+CREATE DATABASE IF NOT EXISTS studysync;
+USE studysync;
+
+CREATE TABLE users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  full_name VARCHAR(100) NOT NULL,
+  email VARCHAR(150) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  dob DATE DEFAULT NULL,
+  daily_capacity INT DEFAULT 4,
+  xp INT DEFAULT 0,
+  level INT DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE tasks (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  user_id INT NOT NULL,
+  title VARCHAR(200) NOT NULL,
+  description TEXT,
+  subject VARCHAR(100) DEFAULT 'General',
+  priority ENUM('High','Medium','Low') DEFAULT 'Medium',
+  task_date DATE,
+  task_time TIME DEFAULT '00:00:00',
+  estimated_time INT DEFAULT 60,
+  is_urgent TINYINT(1) DEFAULT 0,
+  is_important TINYINT(1) DEFAULT 0,
+  reminder TINYINT(1) DEFAULT 0,
+  color VARCHAR(20) DEFAULT '#00B4BE',
+  status ENUM('pending','completed') DEFAULT 'pending',
+  smart_score INT DEFAULT 0,
+  order_number INT DEFAULT 0,
+  completed_at TIMESTAMP NULL,
+  time_spent_mins INT DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE notes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    content TEXT,
+    category ENUM('Study', 'Personal', 'Social', 'Important') DEFAULT 'Study',
+    is_starred TINYINT(1) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE friends (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    friend_id INT NOT NULL,
+    status ENUM('pending', 'accepted') DEFAULT 'pending',
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (friend_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE daily_activity (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    activity_date DATE NOT NULL,
+    UNIQUE KEY uq_user_day (user_id, activity_date),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+<?php
+define('DB_HOST', 'localhost');
+define('DB_USER', 'root');
+define('DB_PASS', '');
+define('DB_NAME', 'studysync');
+
+define('GEMINI_API_KEY', 'YOUR_API_KEY_HERE');
+define('GEMINI_MODEL',   'gemini-1.5-flash');
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_set_cookie_params(['lifetime' => 86400 * 7, 'path' => '/', 'httponly' => true, 'samesite' => 'Lax']);
+    session_start();
+}
+
+function getDB(): mysqli {
+    $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+    if ($conn->connect_error) { respond(false, "DB Error"); }
+    $conn->set_charset('utf8mb4');
+    return $conn;
+}
+
+function respond($ok, $msg = '', $data = null) {
+    echo json_encode(['success' => $ok, 'message' => $msg, 'data' => $data]);
+    exit;
+}
+
+function requireAuth(): int {
+    if (empty($_SESSION['user_id'])) { http_response_code(401); respond(false, 'Login required'); }
+    return (int) $_SESSION['user_id'];
+}
+
+const _base = '/studysync/php';
+
+async function _req(url, opts = {}) {
+   const res = await fetch(url, {
+       credentials: 'include',
+       headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) },
+       ...opts
+   });
+   return res.json();
+}
+
+const API = {
+   getMe: () => _req(`${_base}/auth.php?action=me`),
+   login: (d) => _req(`${_base}/auth.php?action=login`, {method:'POST', body: JSON.stringify(d)}),
+   getTasks: (p={}) => _req(`${_base}/tasks.php?action=list&${new URLSearchParams(p)}`),
+   createTask: (d) => _req(`${_base}/tasks.php?action=create`, {method:'POST', body: JSON.stringify(d)}),
+   toggleTask: (id) => _req(`${_base}/tasks.php?action=toggle`, {method:'POST', body: JSON.stringify({id})}),
+   reorderTasks: (d) => _req(`${_base}/tasks.php?action=reorder`, {method:'POST', body: JSON.stringify(d)}),
+   getStats: () => _req(`${_base}/tasks.php?action=stats`),
+   askAI: (prompt) => _req(`${_base}/ai.php`, {method:'POST', body: JSON.stringify({prompt})}),
+   getNotes: () => _req(`${_base}/notes.php?action=list`),
+   addFriend: (s) => _req(`${_base}/social.php?action=add_friend`, {method:'POST', body: JSON.stringify({search:s})}),
+   getLeaderboard: () => _req(`${_base}/social.php?action=leaderboard`)
+};
+
+function getLocalDateString(date) {
+    let d = new Date(date);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+async function generateVirtualSchedule(user, tasks) {
+    const dailyCapacityMins = (parseInt(user.daily_capacity) || 4) * 60;
+    let pool = tasks.filter(t => t.status === 'pending').map(t => ({
+        ...t, remainingMins: parseInt(t.estimated_time) || 60 
+    }));
+
+    let fixed = pool.filter(t => t.task_time !== '00:00:00');
+    let floating = pool.filter(t => t.task_time === '00:00:00');
+
+    floating.sort((a, b) => (a.order_number - b.order_number) || (b.smart_score - a.smart_score));
+
+    let schedule = {};
+    let simDate = new Date();
+    for (let i = 0; i < 30; i++) {
+        const dateKey = getLocalDateString(simDate);
+        schedule[dateKey] = [];
+        let used = 0;
+
+        fixed.filter(t => t.task_date === dateKey).forEach(t => {
+            schedule[dateKey].push({...t, isFixed: true, segmentMins: t.remainingMins});
+            used += t.remainingMins;
+            t.remainingMins = 0;
+        });
+
+        for (let t of floating) {
+            if (t.remainingMins <= 0 || t.task_date > dateKey) continue;
+            let space = dailyCapacityMins - used;
+            if (space <= 0) break;
+            let assign = Math.min(t.remainingMins, space);
+            schedule[dateKey].push({...t, isFixed: false, segmentMins: assign});
+            t.remainingMins -= assign;
+            used += assign;
+        }
+        simDate.setDate(simDate.getDate() + 1);
+    }
+    return schedule;
+}
+
+if ($action === 'toggle') {
+   $stmt = $db->prepare("UPDATE tasks SET 
+        status = IF(status='pending','completed','pending'),
+        completed_at = IF(status='pending', CURRENT_TIMESTAMP, NULL),
+        time_spent_mins = IF(status='pending', (DATEDIFF(CURRENT_TIMESTAMP, created_at) + 1) * estimated_time, 0)
+        WHERE id=? AND user_id=?");
+   $stmt->bind_param('ii', $body['id'], $uid);
+   if ($stmt->execute()) {
+       $db->query("UPDATE users SET xp = xp + 50 WHERE id = $uid");
+       respond(true, 'Updated');
+   }
+}
+
+$url = "https://generativelanguage.googleapis.com/v1beta/models/" . GEMINI_MODEL . ":generateContent?key=" . GEMINI_API_KEY;
+$payload = [
+    "contents" => [["parts" => [["text" => $prompt]]]],
+    "system_instruction" => ["parts" => [["text" => "You are StudySync AI. Provide study plans in PLAIN TEXT. No markdown. Use dashes. Context: $ctx"]]],
+    "generationConfig" => ["maxOutputTokens" => 1000]
+];
+

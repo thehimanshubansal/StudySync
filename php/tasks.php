@@ -116,7 +116,7 @@ if ($method === 'POST' && $action === 'create') {
    // BINDING TYPES EXPLAINED:
    // i (user_id), s (title), s (desc), s (cat), s (date), s (time), s (subj), s (prio), i (est), i (urg), i (imp), i (rem)
    $stmt->bind_param('isssssssiiiisii', 
-        $uid, $title, $desc, $category, $date, $timeVal, $subject, $priority, $est_time, $urgent, $important, $reminder, $color, $smart_score, $nextOrder
+        $uid, $title, $desc, $category, $date, $time, $subject, $priority, $est_time, $urgent, $important, $reminder, $color, $smart_score, $nextOrder
    );
 
    if ($stmt->execute()) {
@@ -139,18 +139,32 @@ if ($method === 'POST' && $action === 'toggle') {
    $tid = (int)($body['id'] ?? 0);
    if (!$tid) respond(false, 'Task ID required.');
 
-   $stmt = $db->prepare("UPDATE tasks SET 
-        status = IF(status='pending','completed','pending'),
-        completed_at = IF(status='pending', CURRENT_TIMESTAMP, NULL) 
+    $stmt = $db->prepare("UPDATE tasks SET 
+        completed_at = IF(status='pending', CURRENT_TIMESTAMP, NULL),
+         time_spent_mins = IF(status='pending', (DATEDIFF(CURRENT_TIMESTAMP, created_at) + 1) * estimated_time, 0),
+        status = IF(status='pending','completed','pending')
         WHERE id=? AND user_id=?");
    $stmt->bind_param('ii', $tid, $uid);
 
    
    if ($stmt->execute()) {
        $task = $db->query("SELECT * FROM tasks WHERE id=$tid")->fetch_assoc();
+       // GAMIFICATION LOGIC: Award XP only when task moves from pending -> completed
+       if ($task['status'] === 'completed') {
+           $points = 50; // Base points
+           if ($task['priority'] === 'High') $points += 30;
+           if ($task['is_urgent']) $points += 20;
+           
+           // Update User XP
+           $db->query("UPDATE users SET xp = xp + $points WHERE id = $uid");
+           
+           // Simple Level Up logic (every 1000 XP)
+           $db->query("UPDATE users SET level = FLOOR(xp / 1000) + 1 WHERE id = $uid");
+       }
        respond(true, 'Status Updated', $task);
    }
    respond(false, 'Toggle failed');
+   
 }
 
 

@@ -8,6 +8,7 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="js/api.js"></script>
+    <script src="js/reminder.js"></script>
 
     <script>
         tailwind.config = {
@@ -79,6 +80,28 @@
         </div>
 
         <div class="flex items-center gap-4">
+            <!-- NOTIFICATION BELL -->
+            <div class="relative">
+                <button onclick="toggleReminderDropdown()" class="p-2 w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 transition flex items-center justify-center relative hover:text-sync">
+                    <i class="fas fa-bell text-sm text-slate-400"></i>
+                    <!-- Fixed ID: matching the script -->
+                    <span id="active-reminder-dot" class="hidden absolute top-2 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white dark:border-[#0b1120]"></span>
+                </button>
+                
+                <!-- DROPDOWN -->
+                <div id="reminder-dropdown" class="hidden absolute right-0 mt-3 w-72 bg-white dark:bg-[#0b1120] rounded-[1.5rem] shadow-2xl border border-slate-100 dark:border-white/5 z-[100] overflow-hidden" onclick="event.stopPropagation()">
+                    <div class="p-4 border-b dark:border-white/5 bg-slate-50/50 dark:bg-white/5 flex justify-between items-center">
+                        <h4 class="text-[10px] font-black uppercase tracking-widest text-slate-400">Upcoming Alerts</h4>
+                        
+                        <button onclick="toggleReminderSound()" id="sound-toggle-btn" class="text-slate-400 hover:text-sync transition">
+                            <i class="fas fa-volume-up text-xs"></i>
+                        </button>
+                    </div>
+                    <div id="reminder-list" class="max-h-80 overflow-y-auto main-scrollbar p-2 space-y-2">
+                        <p class="text-center py-8 text-[10px] text-slate-400 italic">No tasks with reminders for today.</p>
+                    </div>
+                </div>
+            </div>
             <button onclick="toggleDarkMode()" class="p-2 w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 transition flex items-center justify-center">
                 <i class="fas fa-moon dark:hidden"></i>
                 <i class="fas fa-sun hidden dark:block text-amber-400"></i>
@@ -152,7 +175,12 @@
             <div class="max-w-5xl mx-auto space-y-6">
                 
                 <!-- PROGRESS GIST (Clickable) -->
+                <div class="flex items-center gap-2 mb-4">
+                    <i class="fas fa-chart-line text-sync"></i>
+                    <h3 class="text-sm font-bold uppercase tracking-widest text-slate-400">Progress Gist</h3>
+                </div>
                 <div onclick="window.location.href='progress.html'" class="grid grid-cols-2 md:grid-cols-4 gap-4 cursor-pointer">
+
                     <div class="stats-gist p-4 bg-white dark:bg-[#0b1120] rounded-3xl border border-slate-200 dark:border-white/5 shadow-sm">
                         <p class="text-[10px] font-black text-slate-400 uppercase">Total</p>
                         <p id="gist-total" class="text-xl font-black">0</p>
@@ -369,6 +397,9 @@
             const localDate = new Date(currentMonth.getTime() - (currentMonth.getTimezoneOffset() * 60 * 1000));
             refreshViews();
             calculateSmartSchedule(); 
+            if (Notification.permission !== "granted") {
+                Notification.requestPermission();
+            }
 
             const savedView = sessionStorage.getItem('currentView') || 'day';
             switchView(savedView);
@@ -589,63 +620,62 @@
                 `).join('');
             }
         }
-
-
         let virtualSchedule = {};
 
+        // Helper to get consistent YYYY-MM-DD strings
+        function getLocalDateString(date) {
+            let d = new Date(date);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+
         async function generateVirtualSchedule(user, tasks) {
-            const dailyCapacityMins = (user.daily_capacity) * 60;
+            currentUser = user;
+            const dailyCapacityMins = (user.daily_capacity || 4) * 60;
             
-            // 1. Calculate AI Scores & Sort
-            let taskPool = tasks.filter(t => t.status === 'pending').map(t => {
-                let score = 0;
-                if (t.priority === 'High') score += 50;
-                else if (t.priority === 'Medium') score += 25;
-                if (parseInt(t.is_urgent) === 1) score += 40;
-                if (parseInt(t.is_important) === 1) score += 30;
-                
-                return { 
-                    ...t, 
-                    smartScore: score,
-                    remainingMins: parseInt(t.estimated_time) || 60 
-                };
-            });
+            // 1. Prepare Task Pool (Only pending)
+            let taskPool = tasks.filter(t => t.status === 'pending').map(t => ({
+                ...t,
+                smartScore: calculateLocalScore(t),
+                remainingMins: parseInt(t.estimated_time) || 60
+            }));
 
+            // 2. Separate Fixed vs Floating
+            let fixedTasks = taskPool.filter(t => t.task_time && t.task_time !== '00:00:00');
+            let floatingTasks = taskPool.filter(t => !t.task_time || t.task_time === '00:00:00');
 
-            // 3. Distribute across days (Resource Allocation)
-            let schedule = {};
-            let currentDate = new Date();
-            currentDate.setHours(0,0,0,0);
-
-            let fixedTasks = taskPool.filter(t => t.status === 'pending' && t.task_time !== '00:00:00');
-            let floatingTasks = taskPool.filter(t => t.status === 'pending' && (t.task_time === '00:00:00' || !t.task_time));
-
-            // 2. Sort Floating Tasks (Manual Order > AI Smart Score)
+            // 3. Sort Floating Tasks by Manual Order then AI Score
             floatingTasks.sort((a, b) => {
                 if (a.order_number !== b.order_number) {
                     if (a.order_number === 0) return 1;
                     if (b.order_number === 0) return -1;
                     return a.order_number - b.order_number;
                 }
-                return b.smart_score - a.smart_score;
+                return b.smartScore - a.smartScore;
             });
 
+            let schedule = {};
+            let simDate = new Date();
+            simDate.setHours(0,0,0,0);
+
+            // 4. Simulate 30 days
             for (let i = 0; i < 30; i++) { 
-                const localDate = new Date(currentDate.getTime() - (currentDate.getTimezoneOffset() * 60 * 1000));
-                const dateKey = localDate.toISOString().split('T')[0];
+                const dateKey = getLocalDateString(simDate);
                 schedule[dateKey] = [];
                 let minsUsedToday = 0;
 
+                // A. First, place Fixed Tasks that belong to this specific date
                 const fixedToday = fixedTasks.filter(t => t.task_date === dateKey);
                 fixedToday.forEach(t => {
-                    schedule[dateKey].push({ ...t, isFixed: true, segmentMins: t.estimated_time });
-                    minsUsedToday += parseInt(t.estimated_time);
+                    schedule[dateKey].push({ ...t, isFixed: true, segmentMins: t.remainingMins });
+                    minsUsedToday += t.remainingMins;
+                    t.remainingMins = 0; // Mark as done in simulation
                 });
 
-                // B. Fill the remaining capacity with Floating Tasks
+                // B. Then, fill remaining capacity with Floating Tasks
                 for (let task of floatingTasks) {
-                    if (!task.remainingMins) task.remainingMins = parseInt(task.estimated_time);
-                    if (task.remainingMins <= 0) continue;
+                    if (task.remainingMins <= 0) continue; // Task is already fully scheduled
+
+                    if (task.task_date && task.task_date > dateKey) continue;
 
                     let spaceLeft = dailyCapacityMins - minsUsedToday;
                     if (spaceLeft <= 0) break; // Daily study limit reached
@@ -661,87 +691,79 @@
                     task.remainingMins -= minsToAssign;
                     minsUsedToday += minsToAssign;
                 }
-                currentDate.setDate(currentDate.getDate() + 1);
+                simDate.setDate(simDate.getDate() + 1);
             }
-            virtualSchedule = schedule;
+            virtualSchedule = schedule;    
+            // NEW: Save to storage so other pages and the reminder script can see it
+            localStorage.setItem('studySync_virtualSchedule', JSON.stringify(virtualSchedule));
         }
         
-        async function renderDayTimeline(targetDate) {
+        function calculateLocalScore(t) {
+            let s = t.priority === 'High' ? 50 : (t.priority === 'Medium' ? 25 : 10);
+            if (parseInt(t.is_urgent) === 1) s += 40;
+            if (parseInt(t.is_important) === 1) s += 30;
+            return s;
+        }
+
+        async function renderDayTimeline(targetDateString) {
             const container = document.getElementById('dayContent');
-            const dayTasks = virtualSchedule[targetDate] || [];
+            const dayTasks = virtualSchedule[targetDateString] || [];
             
             let html = `<div class="relative min-h-[1440px]">`; // 24h * 60px/h
             
-            // 1. Draw Grid Lines
+            // 1. Grid Lines
             for (let i = 0; i < 24; i++) {
                 const ampm = i < 12 ? 'AM' : 'PM';
                 const h = i === 0 ? 12 : (i > 12 ? i - 12 : i);
                 html += `<div class="h-[60px] border-b dark:border-white/5 flex">
-                            <div class="w-20 p-2 text-[9px] font-black text-slate-400 border-r dark:border-white/5">${h} ${ampm}</div>
-                            <div class="flex-1" ondragover="handleDragOver(event)"></div>
+                            <div class="w-20 p-2 text-[9px] font-black text-slate-400 border-r dark:border-white/5 text-right pr-4">${h} ${ampm}</div>
+                            <div class="flex-1"></div>
                         </div>`;
             }
 
-            // 2. Overlay Stretched Tasks
-            let currentTop = 540; // Start at 9:00 AM (9 * 60px)
-            
+            // 2. Render Tasks
+            let floatingTopOffset = 540; // Starts at 9 AM
+
             dayTasks.forEach(t => {
-                const isSmall = t.segmentMins < 30; // Anything less than 30 mins is "small"
-                const height = (t.segmentMins / 60) * 60; // 1px per minute
                 let topPosition;
                 if (t.isFixed) {
-                    // Calculate top based on actual task_time (e.g. "14:30" -> 14.5 * 60)
                     const [hrs, mins] = t.task_time.split(':').map(Number);
                     topPosition = (hrs * 60) + mins;
                 } else {
-                    topPosition = currentTop;
-                    currentTop += (t.segmentMins); // Stack next floating task below
+                    topPosition = floatingTopOffset;
+                    floatingTopOffset += t.segmentMins; // Move next floating task down
                 }
+
+                const height = Math.max((t.segmentMins / 60) * 60, 38);
+                const isSmall = t.segmentMins < 40;
                 const isDraggable = !t.isFixed;
 
                 html += `
                     <div draggable="${isDraggable}" 
                         ${isDraggable ? `ondragstart="handleDragStart(event, ${t.id})" ondrop="handleDrop(event, ${t.id})"` : ''}
                         onclick="toggleTask(${t.id})"
-                        class="absolute left-24 right-4 rounded-xl text-white shadow-lg z-10 flex flex-col justify-center border-l-4 transition-all
+                        class="absolute left-24 right-6 rounded-2xl text-white shadow-xl z-10 flex border-l-[6px] transition-all hover:scale-[1.005]
                                 ${isDraggable ? 'cursor-grab active:cursor-grabbing border-white/20' : 'cursor-default border-black/30'}"
-                        style="top: ${currentTop}px; 
-                                height: ${Math.max(height, 30)}px; 
+                        style="top: ${topPosition}px; 
+                                height: ${height - 2}px; 
                                 background: ${t.color}; 
-                                border-color: rgba(0,0,0,0.2);
-                                padding: ${isSmall ? '2px 8px' : '8px 12px'};">
+                                border-color: rgba(0,0,0,0.15);">
                         
-                        <div class="flex flex-row h-full justify-between p-3 pointer-events-none">
-                          
-                            <div class="flex justify-between items-start gap-2">
-                                <div class="flex flex-col truncate">
-                                    <span class="text-[9px] font-black uppercase tracking-widest opacity-80 leading-none mb-1">
-                                        ${t.subject || 'General'}
-                                    </span>
-                                    <h4 class="${isSmall ? 'text-xs' : 'text-sm'} font-bold truncate leading-tight">
-                                        ${t.title}
-                                    </h4>
-                                </div>
-                            </div>                            
-                            ${!isSmall ? `
-                            <div class="flex items-center justify-between mt-1">
-                                <div class="flex items-center gap-2 opacity-80">
-                                    <span class="text-[10px] font-bold flex items-center gap-1">
-                                        <i class="far fa-clock text-[9px]"></i> ${t.segmentMins} mins &ensp;
-                                    </span>
-                                </div>
-                                ${t.smartScore ? `
-                                <span class="text-[10px] font-black bg-black/10 px-2 py-0.5 rounded-lg flex items-center gap-1">
-                                    <i class="fas fa-bolt text-amber-300 text-[8px]"></i> ${t.smartScore}
+                        <div class="flex flex-row w-full items-center justify-between px-4 py-2 pointer-events-none gap-4">
+                            <div class="flex flex-col truncate min-w-0">
+                                <span class="text-[8px] font-black uppercase opacity-70 tracking-widest leading-none mb-1">
+                                    ${t.subject} ${t.isContinuation ? '...' : ''}
                                 </span>
-                                ` : ''}
+                                <h4 class="text-[11px] font-bold truncate leading-tight">${t.title}</h4>
                             </div>
-                            ` : ''}
-                            <i class="fas ${t.isFixed ? 'fa-thumbtack' : 'fa-grip-vertical'} text-[10px] mt-1 opacity-40"></i>
+                            <div class="flex items-center gap-4 shrink-0">
+                                <div class="flex items-center gap-1.5 text-[10px] font-bold opacity-80">
+                                    <i class="far fa-clock"></i> ${!isSmall ? `${t.segmentMins}m` : ''}
+                                </div>
+                                <i class="fas ${t.isFixed ? 'fa-thumbtack' : 'fa-grip-vertical'} text-[10px] opacity-40"></i>
+                            </div>
                         </div>
                     </div>`;
-                
-                currentTop += height;
             });
 
             container.innerHTML = html + `</div>`;
@@ -755,7 +777,7 @@
             for (let i = 0; i < 7; i++) {
                 let day = new Date(startOfWeek);
                 day.setDate(startOfWeek.getDate() + i);
-                let dateStr = day.toISOString().split('T')[0];
+                let dateStr = getLocalDateString(day);
                 let daySegments = virtualSchedule[dateStr] || [];
 
                 container.innerHTML += `
@@ -777,14 +799,15 @@
             }
         }
         
-        
         async function renderMonthView(refDate) {
-            const grid = document.getElementById('monthContent');
-            if(!grid) return;
+            const grid = document.getElementById('monthContent'); // Ensure this matches your HTML ID
+            if (!grid) return;
             grid.innerHTML = '';
+
             const year = refDate.getFullYear();
             const month = refDate.getMonth();
-            
+
+            // 1. Render Weekday Headers
             ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(day => {
                 grid.innerHTML += `<div class="p-3 text-center text-[9px] font-black uppercase text-slate-400 border-b dark:border-white/5 bg-slate-50/50 dark:bg-white/5">${day}</div>`;
             });
@@ -792,23 +815,57 @@
             const firstDay = new Date(year, month, 1).getDay();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-            // Fetching tasks for the whole month
-            const monthStr = `${year}-${String(month + 1).padStart(2, '0')}`;
-            const res = await API.getTasks({ month: monthStr });
-            const tasks = res.success ? res.data : [];
+            // 2. Add Padding for the start of the month
+            for (let i = 0; i < firstDay; i++) {
+                grid.innerHTML += `<div class="p-6 border-b border-r dark:border-white/5 opacity-10 bg-slate-50/20 dark:bg-transparent"></div>`;
+            }
 
-            for (let i = 0; i < firstDay; i++) grid.innerHTML += `<div class="p-6 border-b border-r dark:border-white/5 opacity-20"></div>`;
+            // Get today's date string for highlighting
+            const todayStr = getLocalDateString(new Date());
+
+            // 3. Render Actual Days
             for (let d = 1; d <= daysInMonth; d++) {
-                const dateStr = `${year}-${String(month+1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                const dayTasks = tasks.filter(t => t.task_date === dateStr);
+                // Ensure date string matches the keys in your virtualSchedule (YYYY-MM-DD)
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                
+                // CRITICAL FIX: Pull tasks from the Virtual Engine, not the raw DB
+                const daySegments = virtualSchedule[dateStr] || [];
+                const isToday = dateStr === todayStr;
+
                 grid.innerHTML += `
-                    <div class="p-6 border-b border-r dark:border-white/5 text-center relative hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer">
-                        <span class="text-xs font-bold">${d}</span>
-                        <div class="flex justify-center gap-0.5 mt-1">
-                            ${dayTasks.map(t => `<div class="w-1.5 h-1.5 rounded-full" style="background:${t.color}"></div>`).join('')}
+                    <div onclick="jumpToDay('${dateStr}')" 
+                        class="p-4 border-b border-r dark:border-white/5 text-center relative hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer transition-all min-h-[90px] group">
+                        
+                        <!-- Day Number -->
+                        <span class="text-xs font-bold ${isToday ? 'bg-sync text-white w-7 h-7 flex items-center justify-center rounded-full mx-auto shadow-lg shadow-sync/30' : 'text-slate-600 dark:text-slate-400'}">
+                            ${d}
+                        </span>
+
+                        <!-- Task Dots (Based on Virtual Allocation) -->
+                        <div class="flex justify-center flex-wrap gap-1 mt-3">
+                            ${daySegments.slice(0, 4).map(seg => `
+                                <div class="w-1.5 h-1.5 rounded-full shadow-sm" 
+                                    style="background:${seg.color}" 
+                                    title="${seg.title}"></div>
+                            `).join('')}
+                            ${daySegments.length > 4 ? '<div class="text-[8px] font-black text-slate-400">+</div>' : ''}
+                        </div>
+
+                        <!-- Hover indicator -->
+                        <div class="absolute bottom-1 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 text-[7px] font-black text-sync uppercase tracking-tighter transition-opacity">
+                            View Schedule
                         </div>
                     </div>`;
             }
+        }
+
+        function jumpToDay(dateStr) {
+            const [y, m, d] = dateStr.split('-').map(Number);
+            currentMonth = new Date(y, m - 1, d);
+
+            switchView('day');
+            
+            showToast(`Viewing ${currentMonth.toLocaleDateString('en-US', {month:'short', day:'numeric'})}`);
         }
 
         function changeMonth(step) {

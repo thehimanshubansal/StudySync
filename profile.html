@@ -8,6 +8,7 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="js/api.js"></script>
+    <script src="js/reminder.js"></script>
 
     <script>
         tailwind.config = {
@@ -79,6 +80,28 @@
         </div>
 
         <div class="flex items-center gap-4">
+            <!-- NOTIFICATION BELL -->
+            <div class="relative">
+                <button onclick="toggleReminderDropdown()" class="p-2 w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 transition flex items-center justify-center relative hover:text-sync">
+                    <i class="fas fa-bell text-sm text-slate-400"></i>
+                    <!-- Fixed ID: matching the script -->
+                    <span id="active-reminder-dot" class="hidden absolute top-2 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white dark:border-[#0b1120]"></span>
+                </button>
+                
+                <!-- DROPDOWN -->
+                <div id="reminder-dropdown" class="hidden absolute right-0 mt-3 w-72 bg-white dark:bg-[#0b1120] rounded-[1.5rem] shadow-2xl border border-slate-100 dark:border-white/5 z-[100] overflow-hidden" onclick="event.stopPropagation()">
+                    <div class="p-4 border-b dark:border-white/5 bg-slate-50/50 dark:bg-white/5 flex justify-between items-center">
+                        <h4 class="text-[10px] font-black uppercase tracking-widest text-slate-400">Upcoming Alerts</h4>
+                        
+                        <button onclick="toggleReminderSound()" id="sound-toggle-btn" class="text-slate-400 hover:text-sync transition">
+                            <i class="fas fa-volume-up text-xs"></i>
+                        </button>
+                    </div>
+                    <div id="reminder-list" class="max-h-80 overflow-y-auto main-scrollbar p-2 space-y-2">
+                        <p class="text-center py-8 text-[10px] text-slate-400 italic">No tasks with reminders for today.</p>
+                    </div>
+                </div>
+            </div>
             <button onclick="toggleDarkMode()" class="p-2 w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 transition flex items-center justify-center">
                 <i class="fas fa-moon dark:hidden"></i>
                 <i class="fas fa-sun hidden dark:block text-amber-400"></i>
@@ -117,7 +140,7 @@
                 </div>
 
                 <p class="px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 pt-4">Actions</p>
-                <button onclick="window.location.href='dashboard.html'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-500 hover:text-sync hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
+                <button onclick="window.location.href='taskscheduler.html'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-500 hover:text-sync hover:bg-slate-50 dark:hover:bg-white/5 transition-all">
                     <i class="fas fa-plus-circle"></i> <span>Add New Task</span>
                 </button>
                 <button onclick="window.location.href='taskscheduler.html'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-500 hover:text-sync hover:bg-slate-50 dark:hover:bg-white/5 transition-all">

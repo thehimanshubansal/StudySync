@@ -78,7 +78,7 @@ if ($action === 'logout') {
 if ($action === 'me') {
    $uid  = requireAuth();
    $db   = getDB();
-   $stmt = $db->prepare('SELECT id, full_name, email, dob, daily_capacity FROM users WHERE id = ?');
+   $stmt = $db->prepare('SELECT id, full_name, email, dob, daily_capacity, xp, level FROM users WHERE id = ?');
    $stmt->bind_param('i', $uid);
    $stmt->execute();
    $user = $stmt->get_result()->fetch_assoc();

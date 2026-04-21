@@ -49,10 +49,12 @@ const API = {
    toggleTask:  (id)   => _req(`${_base}/tasks.php?action=toggle`, { method:'POST', body: JSON.stringify({ id }) }),
    reorderTasks: (d) => _req(`${_base}/tasks.php?action=reorder`, { method:'POST', body: JSON.stringify(d) }),
    deleteTask:  (id)   => _req(`${_base}/tasks.php?action=delete&id=${id}`, { method:'DELETE' }),
-   // Schedules
-   getSchedules:   (p={}) => _req(`${_base}/schedule.php?action=list&${new URLSearchParams(p)}`),
-   createSchedule: (d)    => _req(`${_base}/schedule.php?action=create`, { method:'POST', body: JSON.stringify(d) }),
-   deleteSchedule: (id)   => _req(`${_base}/schedule.php?action=delete&id=${id}`, { method:'DELETE' }),
+   // ── Social & Gamification (New) ──────────────────
+   getLeaderboard: () => _req(`${_base}/social.php?action=leaderboard`),
+   addFriend: (searchTerm) => _req(`${_base}/social.php?action=add_friend`, { 
+       method: 'POST', 
+       body: JSON.stringify({ search: searchTerm }) 
+   }),
    // AI
    askAI: (prompt) => _req(`${_base}/ai.php`, { method:'POST', body: JSON.stringify({ prompt }) }),
    // Notes
