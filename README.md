@@ -1,5 +1,7 @@
 # StudySync: Smart Study Planner 📚
 
+[![Production Link](https://img.shields.io/badge/MVP-STudySync-green)](https://studysync.infinityfreeapp.com/)
+
 **StudySync** is a full-stack, intelligent academic management system designed to eliminate student burnout. It moves beyond traditional to-do lists by using a **Virtual Schedule Engine** to automatically distribute tasks based on study capacity and leveraging **Google Gemini AI** to provide personalized, prioritized study guidance.
 
 ---
